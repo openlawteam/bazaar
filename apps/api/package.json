@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -b ../../packages/core ../../packages/spacebase ../../packages/shopping ../../packages/agents .",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
