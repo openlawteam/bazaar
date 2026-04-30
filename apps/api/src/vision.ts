@@ -24,7 +24,7 @@ export async function analyzeProductImage(input: {
   }
 
   try {
-    visionClient ??= new vision.ImageAnnotatorClient();
+    visionClient ??= createVisionClient();
     const [result] = await visionClient.annotateImage({
       image: { content: input.imageBuffer.toString("base64") },
       features: [
@@ -44,6 +44,24 @@ export async function analyzeProductImage(input: {
       ],
     };
   }
+}
+
+function createVisionClient(): vision.ImageAnnotatorClient {
+  const projectId = process.env.SKUNK_PROJECT_ID;
+  const clientEmail = process.env.SKUNK_CLIENT_EMAIL;
+  const privateKey = normalizePrivateKey(process.env.SKUNK_PRIVATE_KEY);
+
+  if (projectId && clientEmail && privateKey) {
+    return new vision.ImageAnnotatorClient({
+      projectId,
+      credentials: {
+        client_email: clientEmail,
+        private_key: privateKey,
+      },
+    });
+  }
+
+  return new vision.ImageAnnotatorClient();
 }
 
 function normalizeVisionResult(result: vision.protos.google.cloud.vision.v1.IAnnotateImageResponse): ProductVisionFacts {
@@ -123,4 +141,8 @@ function isKnownDemoImage(fileName?: string, message?: string): boolean {
 
 function guessFromNeedles(haystack: string, needles: string[]): string | undefined {
   return needles.find((needle) => haystack.includes(needle.toLowerCase()));
+}
+
+function normalizePrivateKey(value: string | undefined): string | undefined {
+  return value?.replace(/\\n/g, "\n");
 }
