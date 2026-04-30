@@ -1,6 +1,7 @@
 import { config } from "../config.js";
 import { logger } from "../logger.js";
 import { conversationRepo, usersRepo, wantsRepo } from "../db/repos.js";
+import type { UserRow } from "../db/store.js";
 import {
   issueOtpForPhone,
   mintSessionToken,
@@ -10,13 +11,20 @@ import {
 import { linqClient } from "../linq/client.js";
 import { parseWantText, type ParsedWant } from "../wants/parser.js";
 import { createSpacebaseClient } from "../spacebase/client.js";
-import { adinClient } from "../adin/client.js";
-import { buildIntakeUserMessage } from "../adin/prompt.js";
+import { gatewayClient } from "../gateway/client.js";
+import { SMS_AGENT_SYSTEM_PROMPT, buildIntakeUserContext } from "../adin/prompt.js";
+import { classifyIntent, type SmsIntent } from "./intent.js";
+import { handleSellIntake } from "./sell.js";
+import { handleDiscover } from "./discover.js";
 
 const spacebase = createSpacebaseClient();
 
-const HELP_TEXT =
-  "Hi from Bazaar. Tell me what you're looking for, e.g. \"used Herman Miller chair under $500 near Brooklyn\" and I'll have agents find options.";
+const HELP_TEXT = [
+  "Bazaar by SMS. You can:",
+  "- Tell me what you want (e.g. \"used Aeron under $500 near Brooklyn\")",
+  "- List something to sell (e.g. \"selling Trek road bike $400 in Park Slope\")",
+  "- Ask what's trending, what's new, or what's local to me",
+].join("\n");
 
 const VERIFY_PROMPT =
   "Welcome to Bazaar. Reply with the 6-digit code I just sent to verify this number.";
@@ -79,7 +87,9 @@ export async function processInbound(options: ProcessOptions): Promise<void> {
     conversationRepo.get(user.id) ??
     conversationRepo.upsert(user.id, { state: "needs_verification" });
 
-  if (text.toLowerCase() === "help") {
+  const intent = classifyIntent(text);
+
+  if (intent.kind === "help") {
     await reply(phone, user.id, HELP_TEXT);
     return;
   }
@@ -125,7 +135,48 @@ export async function processInbound(options: ProcessOptions): Promise<void> {
     return;
   }
 
-  await handleWantIntake({ phone, userId: user.id, text });
+  await dispatchIntent({ phone, user, text, intent });
+}
+
+async function dispatchIntent(args: {
+  phone: string;
+  user: UserRow;
+  text: string;
+  intent: SmsIntent;
+}): Promise<void> {
+  const { phone, user, text, intent } = args;
+  switch (intent.kind) {
+    case "help": {
+      await reply(phone, user.id, HELP_TEXT);
+      return;
+    }
+    case "sell": {
+      const result = handleSellIntake({
+        userId: user.id,
+        rawText: text,
+        remainder: intent.remainder,
+      });
+      await reply(phone, user.id, result.replyBody);
+      return;
+    }
+    case "discover": {
+      const result = handleDiscover({
+        scope: intent.scope,
+        user,
+        locationHint: intent.locationHint,
+      });
+      await reply(phone, user.id, result.replyBody);
+      return;
+    }
+    case "want": {
+      await handleWantIntake({ phone, userId: user.id, text });
+      return;
+    }
+    default: {
+      const _exhaustive: never = intent;
+      return _exhaustive;
+    }
+  }
 }
 
 async function handleWantIntake(input: { phone: string; userId: string; text: string }) {
@@ -170,24 +221,26 @@ async function composeIntakeReply(input: {
   parsed: ParsedWant;
   userId: string;
 }): Promise<string> {
-  if (adinClient.isConfigured()) {
-    const adinResult = await adinClient.complete({
-      userMessage: buildIntakeUserMessage({
+  if (gatewayClient.isConfigured()) {
+    const gatewayResult = await gatewayClient.complete({
+      systemPrompt: SMS_AGENT_SYSTEM_PROMPT,
+      userMessage: buildIntakeUserContext({
         rawText: input.rawText,
         parsed: input.parsed,
       }),
     });
-    if (adinResult.ok && adinResult.text) {
+    if (gatewayResult.ok && gatewayResult.text) {
       logger.info("conversation.reply.source", {
         userId: input.userId,
-        source: "adin",
-        adinConversationId: adinResult.conversationId,
+        source: "gateway",
+        model: gatewayResult.model,
       });
-      return adinResult.text;
+      return gatewayResult.text;
     }
-    logger.warn("conversation.reply.adin_fallback", {
+    logger.warn("conversation.reply.gateway_fallback", {
       userId: input.userId,
-      reason: adinResult.reason,
+      reason: gatewayResult.reason,
+      model: gatewayResult.model,
     });
   }
 

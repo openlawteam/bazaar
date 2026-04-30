@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./app": "./src/app.ts"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -b ../../packages/core ../../packages/spacebase ../../packages/shopping ../../packages/agents .",
@@ -10,6 +13,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/gateway": "^3.0.107",
     "@bazaar/agents": "file:../../packages/agents",
     "@bazaar/core": "file:../../packages/core",
     "@bazaar/shopping": "file:../../packages/shopping",
@@ -17,6 +21,7 @@
     "@google-cloud/vision": "^5.3.5",
     "@hono/node-server": "latest",
     "@neondatabase/serverless": "latest",
+    "ai": "^6.0.172",
     "dotenv": "latest",
     "hono": "latest",
     "nanoid": "latest",

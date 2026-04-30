@@ -53,6 +53,9 @@ const envSchema = z.object({
   ADIN_API_BASE_URL: z.string().url().default("https://adin.chat/api/v1"),
   ADIN_API_KEY: z.string().optional(),
   OPENAI_API_KEY: z.string().optional(),
+  VERCEL_AI_GATEWAY_API_KEY: z.string().optional(),
+  AI_GATEWAY_API_KEY: z.string().optional(),
+  GATEWAY_SMS_MODEL: z.string().default("openai/gpt-5.1-instant"),
 
   SPACEBASE_COMMONS_URL: z.string().url().default("https://spacebase1.differ.ac/commons"),
   SPACEBASE_AGENT_PRINCIPAL: z.string().optional(),
@@ -68,11 +71,16 @@ const parsed = envSchema.parse(process.env);
 export const config = parsed;
 export type AppConfig = typeof parsed;
 
+export function resolveGatewayApiKey(): string | undefined {
+  return config.AI_GATEWAY_API_KEY ?? config.VERCEL_AI_GATEWAY_API_KEY;
+}
+
 export interface ReadinessReport {
   config: { nodeEnv: string; port: number };
   linq: { configured: boolean; canSend: boolean };
   sms: { allowlistEnabled: boolean; trustedNumberCount: number };
   adin: { configured: boolean };
+  gateway: { configured: boolean; model: string };
   spacebase: { configured: boolean; homeSpaceId: string | null };
   demoMode: boolean;
 }
@@ -90,6 +98,10 @@ export function describeReadiness(): ReadinessReport {
       trustedNumberCount: config.SMS_TRUSTED_PHONE_NUMBERS.length,
     },
     adin: { configured: Boolean(config.ADIN_API_KEY) },
+    gateway: {
+      configured: Boolean(resolveGatewayApiKey()),
+      model: config.GATEWAY_SMS_MODEL,
+    },
     spacebase: {
       configured: Boolean(config.SPACEBASE_AGENT_PRINCIPAL),
       homeSpaceId: config.SPACEBASE_HOME_SPACE_ID ?? null,
