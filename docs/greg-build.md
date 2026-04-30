@@ -48,6 +48,7 @@ The terminal will log a `spacebase.mock.post` and a `linq.outbound.demo` reply.
 | OTP + sessions | `apps/api/src/auth/otp.ts` | Issue/verify codes, mint Bearer tokens |
 | Conversation router | `apps/api/src/conversation/router.ts` | State machine, SMS allowlist/trusted-number gate, want intake handler |
 | Want parser | `apps/api/src/wants/parser.ts` | Regex baseline + optional OpenAI structured parse with Bazaar-specific prompt rules |
+| ADIN SMS agent | `apps/api/src/adin/client.ts`, `apps/api/src/adin/prompt.ts` | Generates the customer-facing SMS reply when `ADIN_API_KEY` is set; SSE-aware, non-streaming POST, falls back to templated ack on failure |
 | Spacebase client | `apps/api/src/spacebase/client.ts` | Mock + HTTP stub gated on env |
 | HTTP server | `apps/api/src/server.ts` | All endpoints wired |
 
@@ -70,7 +71,7 @@ The terminal will log a `spacebase.mock.post` and a `linq.outbound.demo` reply.
 These are the next steps in priority order.
 
 1. Provision a Linq webhook subscription pointing at `/webhooks/linq/inbound?version=2026-02-03` and set `LINQ_WEBHOOK_SECRET`, `LINQ_API_KEY`, `LINQ_FROM_PHONE_NUMBER` in `.env`.
-2. Wire ADIN streaming responses (`ADIN_API_BASE_URL` + `ADIN_API_KEY`) for richer want parsing and profile interviews. The repo currently uses a regex baseline plus an optional OpenAI fallback when `OPENAI_API_KEY` is present.
+2. Extend the ADIN integration. The SMS reply path now runs through ADIN's `/api/v1/chat` endpoint when `ADIN_API_KEY` is set (`apps/api/src/adin/client.ts`); want parsing still uses the regex baseline plus the optional OpenAI fallback. Next: route profile interview prompts and post-search update messages through ADIN as well, and add streaming for longer responses.
 3. Build the profile interview flow on top of the existing `profiling` state. After OTP verify, run a 3 to 5 question interview that saves `BuyerPreference` rows.
 4. Replace the file-backed store with Postgres or SQLite when persistence/scale matters. The repo pattern in `apps/api/src/db/repos.ts` is built to swap.
 5. Finish the real Spacebase HTTP client: provision a home space via the website-prepared agent flow, set `SPACEBASE_AGENT_PRINCIPAL` and `SPACEBASE_HOME_SPACE_ID`, then implement signed `INTENT` posting in `apps/api/src/spacebase/client.ts`.
@@ -80,6 +81,25 @@ These are the next steps in priority order.
 9. Deploy the API somewhere reachable by Linq and Suvina's iOS build. Vercel, Railway, Fly, or a small VPS work fine.
 
 ## Environment
+
+For teammates pulling envs from Vercel:
+
+```bash
+npm i -g vercel
+vercel login
+vercel link --yes --project bazaar --scope tributelabs
+vercel env pull .env --environment=development --yes
+```
+
+After pulling, `npm run dev:api` works without further setup.
+
+For Greg pushing fresh values from local `.env` to Vercel:
+
+```bash
+./scripts/sync-env-to-vercel.sh
+```
+
+The script pushes every populated key in `.env` to the `development` and `production` environments. Preview is intentionally skipped because Vercel CLI requires an explicit git branch in non-interactive mode.
 
 The full env template lives in `.env.example`. The minimum to go live with Linq:
 
@@ -91,7 +111,7 @@ The full env template lives in `.env.example`. The minimum to go live with Linq:
 Optional:
 
 - `OPENAI_API_KEY` enables LLM want parsing
-- `ADIN_API_KEY` reserved for future profile interview streaming
+- `ADIN_API_KEY` switches the SMS reply text from a templated ack to an ADIN-generated message (system prompt in `apps/api/src/adin/prompt.ts`)
 - `SPACEBASE_AGENT_PRINCIPAL` plus `SPACEBASE_HOME_SPACE_ID` switches the Spacebase client from mock to HTTP
 - `DEMO_MODE=true` skips Linq verification and outbound delivery for local demos
 - `SMS_ALLOWED_PHONE_NUMBERS` limits the SMS route to specific comma-separated E.164-style numbers

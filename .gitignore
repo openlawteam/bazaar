@@ -5,6 +5,9 @@
 node_modules/
 dist/
 .data/
+.spacebase1/.intent-space/identity/station-private-key.pem
+.spacebase1/.intent-space/identity/*.pem
+!.spacebase1/.intent-space/identity/station-public-key.pem
 .turbo/
 .next/
 coverage/
