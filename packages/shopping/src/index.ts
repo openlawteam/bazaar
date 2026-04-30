@@ -226,7 +226,7 @@ export const demoListings: DemoListing[] = [
     sellerId: "seller-manhattan-stretch",
     title: "Refurbished Herman Miller Aeron with posture fit",
     description:
-      "Professionally refurbished Aeron with posture fit, new casters, 30-day shop warranty. Pickup or courier from Flatiron.",
+      "Professionally refurbished Aeron with posture fit, new casters, 30-day shop warranty. Local pickup or courier from Flatiron.",
     priceCents: 57500,
     currency: "USD",
     locationLabel: "Flatiron, Manhattan",
@@ -234,21 +234,23 @@ export const demoListings: DemoListing[] = [
     condition: "excellent",
     source: "demo",
     status: "available",
-    tags: ["herman miller", "aeron", "refurbished", "office chair", "manhattan", "warranty"],
+    tags: ["herman miller", "aeron", "refurbished", "office chair", "manhattan", "warranty", "local pickup"],
   },
   {
     id: "listing-aeron-risky",
     sellerId: "seller-risky-chair",
     title: "Designer office chair must go today",
-    description: "Looks like expensive chair. Cash only. Deposit before address. No extra photos.",
+    description:
+      "Looks like expensive chair. Local pickup only, cash only. Deposit before address. No extra photos.",
     priceCents: 18000,
     currency: "USD",
     locationLabel: "Bushwick, Brooklyn",
+    imageUrl: "https://images.unsplash.com/photo-1592078615290-033ee584e267?q=80&w=1200&auto=format&fit=crop",
     condition: "unknown",
     source: "demo",
     status: "available",
     riskNotes: "Suspiciously low price, vague model, deposit request, and missing photos.",
-    tags: ["office chair", "designer", "brooklyn", "cash only", "deposit"],
+    tags: ["office chair", "designer", "brooklyn", "cash only", "deposit", "local pickup"],
   },
   {
     id: "listing-aeron-shipped",
@@ -269,7 +271,7 @@ export const demoListings: DemoListing[] = [
     id: "listing-road-bike-460",
     sellerId: "seller-bike-park-slope",
     title: "Trek road bike, 54cm, recently tuned",
-    description: "Used aluminum Trek road bike with new chain and brake pads. Pickup near Prospect Park.",
+    description: "Used aluminum Trek road bike with new chain and brake pads. Local pickup near Prospect Park.",
     priceCents: 46000,
     currency: "USD",
     locationLabel: "Park Slope, Brooklyn",
@@ -277,15 +279,481 @@ export const demoListings: DemoListing[] = [
     condition: "good",
     source: "demo",
     status: "available",
-    tags: ["road bike", "trek", "54cm", "brooklyn", "prospect park"],
+    tags: ["road bike", "trek", "54cm", "brooklyn", "prospect park", "local pickup"],
   },
 ];
 
+const demoCities = [
+  "Brooklyn",
+  "Manhattan",
+  "Queens",
+  "Jersey City",
+  "Hoboken",
+  "Newark",
+  "Astoria",
+  "Long Island City",
+  "Park Slope",
+  "Williamsburg",
+];
+
+const buyerFirstNames = [
+  "Alex",
+  "Priya",
+  "Marcus",
+  "Nora",
+  "Eli",
+  "Sam",
+  "Avery",
+  "Mina",
+  "Theo",
+  "Riley",
+  "June",
+  "Owen",
+  "Lena",
+  "Cam",
+  "Iris",
+  "Noah",
+  "Zoe",
+  "Miles",
+  "Anika",
+  "Ben",
+  "Talia",
+  "Kai",
+  "Maya",
+  "Dev",
+  "Sofia",
+  "Jonah",
+  "Amara",
+  "Cole",
+  "Nina",
+  "Leo",
+  "Ari",
+  "Pia",
+  "Remy",
+  "Gia",
+  "Mateo",
+  "Liv",
+  "Ezra",
+  "Rae",
+  "Hana",
+  "Jules",
+  "Ivy",
+  "Max",
+  "Mira",
+  "Drew",
+  "Cleo",
+  "Finn",
+  "Sage",
+  "Quinn",
+  "Mae",
+];
+
+const buyerWishlists = [
+  ["iPad Air", "Apple Pencil"],
+  ["Nike running shoes", "lightweight rain jacket"],
+  ["Breville coffee grinder", "espresso accessories"],
+  ["vintage Levi's denim jacket", "black Chelsea boots"],
+  ["Sonos speaker", "turntable"],
+  ["standing desk", "monitor arm"],
+  ["Fujifilm camera", "prime lens"],
+  ["baby stroller", "travel crib"],
+  ["Nintendo Switch", "party games"],
+  ["road bike", "bike lock"],
+  ["linen sofa", "wool rug"],
+  ["MacBook Air", "USB-C monitor"],
+  ["ceramic dinnerware", "Dutch oven"],
+  ["winter coat", "cashmere sweater"],
+  ["AirPods Pro", "portable charger"],
+  ["guitar amp", "pedal board"],
+  ["camping tent", "sleeping pad"],
+  ["robot vacuum", "air purifier"],
+  ["designer tote", "leather wallet"],
+  ["kids bike", "scooter"],
+];
+
+function generatedBuyers(): DemoBuyer[] {
+  return buyerFirstNames.slice(0, 49).map((name, index) => ({
+    id: `buyer-demo-${String(index + 2).padStart(2, "0")}`,
+    phoneNumber: `+1555012${String(index + 2).padStart(4, "0")}`,
+    displayName: name,
+    locationLabel: demoCities[index % demoCities.length]!,
+    pickupRadiusMiles: [3, 5, 8, 12, 20][index % 5]!,
+    budgetStyle: (["best_value", "lowest_price", "premium_discount"] as const)[index % 3]!,
+    approvalPolicy: (["ask_before_contact", "ask_before_offer", "autonomous_until_purchase"] as const)[
+      index % 3
+    ]!,
+  }));
+}
+
+function generatedBuyerPreferences(buyers: DemoBuyer[]): BuyerPreference[] {
+  return buyers.flatMap((buyer, index) => {
+    const wishlist = buyerWishlists[index % buyerWishlists.length]!;
+    return [
+      {
+        id: `pref-${buyer.id}-primary`,
+        userId: buyer.id,
+        category: "wishlist",
+        key: "looking_for_primary",
+        value: wishlist[0]!,
+        confidence: 0.9,
+        source: "manual",
+        updatedAt: now,
+      },
+      {
+        id: `pref-${buyer.id}-secondary`,
+        userId: buyer.id,
+        category: "wishlist",
+        key: "looking_for_secondary",
+        value: wishlist[1]!,
+        confidence: 0.75,
+        source: "manual",
+        updatedAt: now,
+      },
+      {
+        id: `pref-${buyer.id}-fulfillment`,
+        userId: buyer.id,
+        category: "fulfillment",
+        key: "preferred_location",
+        value: `prefers ${buyer.locationLabel} pickup or fast shipping`,
+        confidence: 0.8,
+        source: "manual",
+        updatedAt: now,
+      },
+    ];
+  });
+}
+
+const sellerNames = [
+  "Northside Tech Closet",
+  "SoHo Sneaker Shelf",
+  "Astoria Home Goods",
+  "Jersey Camera Exchange",
+  "Park Slope Parent Swap",
+  "Williamsburg Vintage Rack",
+  "Queens Audio Corner",
+  "Hoboken Coffee Gear",
+  "Downtown Desk Supply",
+  "Greenpoint Bike Room",
+  "Chelsea Closet Cleanout",
+  "LIC Apartment Finds",
+  "Newark Warehouse Deals",
+  "Brooklyn Book Nook",
+  "Fort Greene Kitchen Goods",
+  "Bushwick Studio Sale",
+  "Upper West Kids Gear",
+  "Red Hook Outdoor Kit",
+  "Dumbo Designer Resale",
+  "Flatiron Electronics",
+  "Prospect Heights Music",
+  "Sunnyside Small Appliances",
+  "Tribeca Travel Gear",
+  "Bed-Stuy Plant Stand",
+  "Clinton Hill Furniture",
+  "Ridgewood Records",
+  "Kips Bay Fitness Gear",
+  "Carroll Gardens Decor",
+  "Harlem Camera Bag",
+  "Morningside Baby Gear",
+  "Crown Heights Console",
+  "Boerum Hill Bags",
+  "NoMad Workstation",
+  "Gowanus Tool Bench",
+  "Midtown Menswear",
+  "Cobble Hill Cookshop",
+  "Inwood Outdoor Sale",
+  "Murray Hill Student Deals",
+  "Bay Ridge Sports Closet",
+  "Union Square Audio",
+  "Battery Park Board Games",
+  "Stuytown Home Office",
+  "Long Island City Wardrobe",
+  "West Village Denim",
+  "Journal Square Finds",
+];
+
+const listingTemplates = [
+  {
+    title: "Apple iPad Air 5th gen, 64GB, blue",
+    description: "Lightly used iPad Air with clean screen, USB-C cable, and a slim case.",
+    priceCents: 38500,
+    tags: ["ipad", "tablet", "apple", "school", "drawing"],
+    condition: "excellent" as const,
+    imageUrl: "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "Apple Pencil 2 with spare tips",
+    description: "Second-generation Apple Pencil, pairs cleanly and includes two spare tips.",
+    priceCents: 7200,
+    tags: ["apple pencil", "ipad", "stylus", "drawing"],
+    condition: "good" as const,
+    imageUrl: "https://images.unsplash.com/photo-1585790050230-5dd28404ccb9?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "Nike Pegasus running shoes, men's 10",
+    description: "Road running shoes with low mileage and clean uppers.",
+    priceCents: 6800,
+    tags: ["nike", "running shoes", "sneakers", "fitness"],
+    condition: "good" as const,
+    imageUrl: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "Patagonia Torrentshell rain jacket, medium",
+    description: "Packable waterproof shell, navy, no rips or delamination.",
+    priceCents: 8900,
+    tags: ["rain jacket", "patagonia", "outdoor", "clothes"],
+    condition: "excellent" as const,
+    imageUrl: "https://images.unsplash.com/photo-1548883354-7622d03aca27?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "Breville Smart Grinder Pro",
+    description: "Coffee grinder with burrs recently cleaned, dosing cup included.",
+    priceCents: 13500,
+    tags: ["coffee grinder", "breville", "espresso", "kitchen"],
+    condition: "good" as const,
+    imageUrl: "https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "Levi's trucker denim jacket, vintage wash",
+    description: "Classic denim jacket with soft broken-in feel and no major wear.",
+    priceCents: 5800,
+    tags: ["levis", "denim jacket", "vintage", "clothes"],
+    condition: "good" as const,
+    imageUrl: "https://images.unsplash.com/photo-1601333144130-8cbb312386b6?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "Sonos One smart speaker",
+    description: "White Sonos One speaker, factory reset, sounds great.",
+    priceCents: 11800,
+    tags: ["sonos", "speaker", "audio", "home"],
+    condition: "excellent" as const,
+    imageUrl: "https://images.unsplash.com/photo-1545454675-3531b543be5d?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "Uplift standing desk, walnut top",
+    description: "Electric sit-stand desk with keypad memory controls and cable tray.",
+    priceCents: 36000,
+    tags: ["standing desk", "home office", "workstation"],
+    condition: "good" as const,
+    imageUrl: "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "Fujifilm X-T30 camera body",
+    description: "Mirrorless camera body with battery, charger, and strap.",
+    priceCents: 52000,
+    tags: ["fujifilm", "camera", "mirrorless", "photography"],
+    condition: "good" as const,
+    imageUrl: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "Uppababy Cruz stroller",
+    description: "Clean stroller with rain cover and under-seat basket.",
+    priceCents: 28000,
+    tags: ["stroller", "uppababy", "baby gear", "parents"],
+    condition: "good" as const,
+    imageUrl: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "Nintendo Switch OLED bundle",
+    description: "OLED Switch with dock, two Joy-Cons, case, and Mario Kart.",
+    priceCents: 28500,
+    tags: ["nintendo switch", "games", "console", "oled"],
+    condition: "excellent" as const,
+    imageUrl: "https://images.unsplash.com/photo-1578303512597-81e6cc155b3e?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "Trek Domane AL 2 road bike, 54cm",
+    description: "Aluminum road bike tuned this month with fresh bar tape.",
+    priceCents: 64000,
+    tags: ["road bike", "trek", "cycling", "54cm"],
+    condition: "good" as const,
+    imageUrl: "https://images.unsplash.com/photo-1485965120184-e220f721d03e?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "West Elm linen sofa, oatmeal",
+    description: "Apartment-size sofa with removable cushions and light wear.",
+    priceCents: 47500,
+    tags: ["sofa", "west elm", "linen", "furniture"],
+    condition: "good" as const,
+    imageUrl: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "MacBook Air M1, 8GB RAM, 256GB",
+    description: "Battery health 91 percent, includes charger and sleeve.",
+    priceCents: 53500,
+    tags: ["macbook air", "laptop", "apple", "m1"],
+    condition: "good" as const,
+    imageUrl: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "Le Creuset Dutch oven, 5.5 qt",
+    description: "Round Dutch oven in flame orange with clean enamel interior.",
+    priceCents: 16500,
+    tags: ["dutch oven", "le creuset", "cookware", "kitchen"],
+    condition: "good" as const,
+    imageUrl: "https://images.unsplash.com/photo-1585515320310-259814833e62?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "North Face Nuptse puffer jacket, small",
+    description: "Warm black puffer with strong loft and no zipper issues.",
+    priceCents: 14500,
+    tags: ["winter coat", "north face", "jacket", "clothes"],
+    condition: "good" as const,
+    imageUrl: "https://images.unsplash.com/photo-1544923246-77307dd654cb?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "AirPods Pro 2 with MagSafe case",
+    description: "Clean earbuds with extra tips, case holds charge well.",
+    priceCents: 12500,
+    tags: ["airpods pro", "headphones", "apple", "audio"],
+    condition: "good" as const,
+    imageUrl: "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "Fender Champion 40 guitar amp",
+    description: "Practice amp with clean and drive channels, works perfectly.",
+    priceCents: 11500,
+    tags: ["guitar amp", "fender", "music", "instrument"],
+    condition: "good" as const,
+    imageUrl: "https://images.unsplash.com/photo-1510915361894-db8b60106cb1?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "REI Half Dome 2 Plus tent",
+    description: "Two-person camping tent with footprint and stakes.",
+    priceCents: 17500,
+    tags: ["tent", "camping", "rei", "outdoor"],
+    condition: "good" as const,
+    imageUrl: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "Dyson V8 cordless vacuum",
+    description: "Cordless vacuum with wall dock, crevice tool, and new filter.",
+    priceCents: 18000,
+    tags: ["dyson", "vacuum", "home", "appliance"],
+    condition: "good" as const,
+    imageUrl: "https://images.unsplash.com/photo-1558317374-067fb5f30001?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "Madewell leather transport tote",
+    description: "Brown leather tote with patina and plenty of structure.",
+    priceCents: 7800,
+    tags: ["tote", "madewell", "bag", "leather"],
+    condition: "good" as const,
+    imageUrl: "https://images.unsplash.com/photo-1594223274512-ad4803739b7c?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    title: "Woom 3 kids bike",
+    description: "Lightweight kids bike with bell and kickstand, ready to ride.",
+    priceCents: 25000,
+    tags: ["kids bike", "woom", "children", "cycling"],
+    condition: "good" as const,
+    imageUrl: "https://images.unsplash.com/photo-1507035895480-2b3156c31fc8?q=80&w=1200&auto=format&fit=crop",
+  },
+];
+
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function generatedSellers(): DemoSeller[] {
+  return sellerNames.map((name, index) => ({
+    id: `seller-demo-${String(index + 6).padStart(2, "0")}`,
+    displayName: name,
+    locationLabel: demoCities[index % demoCities.length]!,
+    trustScore: Math.min(0.98, 0.72 + (index % 9) * 0.025),
+    responseSpeed: (["fast", "medium", "fast", "slow"] as const)[index % 4]!,
+    contactHandle:
+      index % 3 === 0
+        ? `sms:+1555987${String(index + 1).padStart(4, "0")}`
+        : `marketplace:${slugify(name)}-${String(index + 1).padStart(2, "0")}`,
+    fulfillmentPolicy: (["local_pickup", "pickup_or_shipping", "shipping"] as const)[index % 3]!,
+    notes:
+      index % 7 === 0
+        ? "Newer seller with good item photos but fewer completed transactions."
+        : "Responsive demo seller with clear photos, realistic pricing, and flexible handoff windows.",
+  }));
+}
+
+function fulfillmentDetails(seller: DemoSeller): string {
+  switch (seller.fulfillmentPolicy) {
+    case "local_pickup":
+      return `Local pickup in ${seller.locationLabel}; buyer and seller coordinate a public handoff window.`;
+    case "pickup_or_shipping":
+      return `Pickup in ${seller.locationLabel} or tracked shipping at buyer's expense.`;
+    case "shipping":
+      return "Tracked shipping available; seller can provide carrier and handling estimate before payment.";
+    default: {
+      const exhaustive: never = seller.fulfillmentPolicy;
+      return exhaustive;
+    }
+  }
+}
+
+function supplementalListingsForExistingSellers(): DemoListing[] {
+  const sellerIds = demoSellers.map((seller) => seller.id);
+  return sellerIds.map((sellerId, index) => {
+    const template = listingTemplates[(index + 5) % listingTemplates.length]!;
+    const seller = demoSellers[index]!;
+    return {
+      id: `listing-${slugify(sellerId)}-extra`,
+      sellerId,
+      title: template.title,
+      description: `${template.description} Also available from ${seller.displayName}. ${fulfillmentDetails(seller)}`,
+      priceCents: template.priceCents + (index % 3) * 1200,
+      currency: "USD",
+      locationLabel: seller.locationLabel,
+      imageUrl: template.imageUrl,
+      condition: template.condition,
+      source: "demo",
+      status: "available",
+      riskNotes: index === 2 ? "Seller has sparse details; verify before outreach." : undefined,
+      tags: [
+        ...template.tags,
+        seller.locationLabel.toLowerCase(),
+        seller.fulfillmentPolicy.replaceAll("_", " "),
+        "demo",
+      ],
+    };
+  });
+}
+
+function generatedListings(sellers: DemoSeller[]): DemoListing[] {
+  return sellers.flatMap((seller, index) => [0, 1].map((slot) => {
+    const template = listingTemplates[(index * 2 + slot) % listingTemplates.length]!;
+    const priceAdjustment = ((index + slot) % 5) * 900;
+    const condition = slot === 1 && index % 6 === 0 ? "fair" : template.condition;
+    return {
+      id: `listing-${slugify(seller.id)}-${slot + 1}`,
+      sellerId: seller.id,
+      title: template.title,
+      description: `${template.description} ${fulfillmentDetails(seller)} ${seller.notes}`,
+      priceCents: Math.max(3500, template.priceCents + priceAdjustment - (condition === "fair" ? 1800 : 0)),
+      currency: "USD",
+      locationLabel: seller.locationLabel,
+      imageUrl: template.imageUrl,
+      condition,
+      source: "demo",
+      status: "available",
+      riskNotes: seller.trustScore < 0.78 || seller.responseSpeed === "slow" ? "Verify availability and condition before contacting." : undefined,
+      tags: [...template.tags, seller.locationLabel.toLowerCase(), seller.fulfillmentPolicy.replaceAll("_", " ")],
+    };
+  }));
+}
+
+const generatedDemoBuyers = generatedBuyers();
+const generatedDemoSellers = generatedSellers();
+
 export const demoMarketplaceData: DemoMarketplaceData = {
-  buyers: [demoBuyer],
-  preferences: demoBuyerPreferences,
-  sellers: demoSellers,
-  listings: demoListings,
+  buyers: [demoBuyer, ...generatedDemoBuyers],
+  preferences: [...demoBuyerPreferences, ...generatedBuyerPreferences(generatedDemoBuyers)],
+  sellers: [...demoSellers, ...generatedDemoSellers],
+  listings: [
+    ...demoListings,
+    ...supplementalListingsForExistingSellers(),
+    ...generatedListings(generatedDemoSellers),
+  ],
 };
 
 export function runMarketplaceMatch(input: MarketplaceMatchInput): MarketplaceMatchResult {
