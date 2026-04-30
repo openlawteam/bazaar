@@ -11,6 +11,7 @@ export interface DbState {
   conversationStates: ConversationStateRow[];
   wants: WantRow[];
   listingCandidates: ListingCandidateRow[];
+  userListings: UserListingRow[];
   inboundEvents: InboundEventRow[];
   outboundMessages: OutboundMessageRow[];
 }
@@ -104,6 +105,23 @@ export interface ListingCandidateRow {
   createdAt: string;
 }
 
+export interface UserListingRow {
+  id: string;
+  userId: string;
+  rawText: string;
+  title: string;
+  description: string | null;
+  priceCents: number | null;
+  currency: string;
+  locationLabel: string | null;
+  condition: "excellent" | "good" | "fair" | "unknown";
+  status: "available" | "pending" | "sold" | "withdrawn";
+  tags: string[];
+  spacebaseIntentId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface InboundEventRow {
   eventId: string;
   receivedAt: string;
@@ -131,6 +149,7 @@ const initialState: DbState = {
   conversationStates: [],
   wants: [],
   listingCandidates: [],
+  userListings: [],
   inboundEvents: [],
   outboundMessages: [],
 };

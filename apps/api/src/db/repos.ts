@@ -8,6 +8,7 @@ import {
   type OtpRow,
   type OutboundMessageRow,
   type SessionRow,
+  type UserListingRow,
   type UserRow,
   type WantRow,
   getState,
@@ -225,6 +226,36 @@ export const wantsRepo = {
   },
 };
 
+export const listingsRepo = {
+  create(input: Omit<UserListingRow, "id" | "createdAt" | "updatedAt"> & { id?: string }): UserListingRow {
+    const created: UserListingRow = {
+      id: input.id ?? `ulst_${nanoid(12)}`,
+      userId: input.userId,
+      rawText: input.rawText,
+      title: input.title,
+      description: input.description,
+      priceCents: input.priceCents,
+      currency: input.currency,
+      locationLabel: input.locationLabel,
+      condition: input.condition,
+      status: input.status,
+      tags: input.tags,
+      spacebaseIntentId: input.spacebaseIntentId,
+      createdAt: nowIso(),
+      updatedAt: nowIso(),
+    };
+    update((state) => {
+      state.userListings.push(created);
+    });
+    return created;
+  },
+  listForUser(userId: string): UserListingRow[] {
+    return getState()
+      .userListings.filter((row) => row.userId === userId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  },
+};
+
 export const candidatesRepo = {
   listForWant(wantId: string): ListingCandidateRow[] {
     return getState().listingCandidates.filter((row) => row.wantId === wantId);
@@ -249,6 +280,53 @@ export const candidatesRepo = {
       state.listingCandidates.push(created);
     });
     return created;
+  },
+};
+
+export const userListingsRepo = {
+  create(
+    input: Omit<UserListingRow, "id" | "createdAt" | "updatedAt"> & { id?: string },
+  ): UserListingRow {
+    const created: UserListingRow = {
+      id: input.id ?? `usl_${nanoid(12)}`,
+      userId: input.userId,
+      rawText: input.rawText,
+      title: input.title,
+      description: input.description,
+      priceCents: input.priceCents,
+      currency: input.currency,
+      locationLabel: input.locationLabel,
+      condition: input.condition,
+      status: input.status,
+      tags: input.tags,
+      spacebaseIntentId: input.spacebaseIntentId,
+      createdAt: nowIso(),
+      updatedAt: nowIso(),
+    };
+    update((state) => {
+      state.userListings.push(created);
+    });
+    return created;
+  },
+  listForUser(userId: string): UserListingRow[] {
+    return getState()
+      .userListings.filter((row) => row.userId === userId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  },
+  listAvailable(): UserListingRow[] {
+    return getState()
+      .userListings.filter((row) => row.status === "available")
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  },
+  patch(id: string, patch: Partial<UserListingRow>): UserListingRow | undefined {
+    let result: UserListingRow | undefined;
+    update((state) => {
+      const listing = state.userListings.find((row) => row.id === id);
+      if (!listing) return;
+      Object.assign(listing, patch, { updatedAt: nowIso() });
+      result = listing;
+    });
+    return result;
   },
 };
 

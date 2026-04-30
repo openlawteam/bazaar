@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { defaultAgentRoles } from "@bazaar/agents";
 import { type Want, wantSchema } from "@bazaar/core";
-import { buildApprovalResult, runMarketplaceMatch, type AgentTraceEvent } from "@bazaar/shopping";
+import { buildApprovalResult, demoMarketplaceData, runMarketplaceMatch, type AgentTraceEvent } from "@bazaar/shopping";
 
 import { config, describeReadiness } from "./config.js";
 import { logger } from "./logger.js";
@@ -12,6 +12,7 @@ import {
   candidatesRepo,
   conversationRepo,
   inboundEventsRepo,
+  listingsRepo,
   preferencesRepo,
   usersRepo,
   wantsRepo,
@@ -157,6 +158,49 @@ app.get("/me/wants", (context) => {
   const user = getSessionUser(context.req.header("authorization"));
   if (!user) return context.json({ error: "unauthorized" }, 401);
   return context.json({ wants: wantsRepo.listForUser(user.id) });
+});
+
+const listingCreateSchema = z.object({
+  title: z.string().min(1).max(200),
+  description: z.string().max(1000).optional(),
+  priceCents: z.number().int().nonnegative().optional(),
+  locationLabel: z.string().max(120).optional(),
+});
+
+app.get("/me/listings", (context) => {
+  const user = getSessionUser(context.req.header("authorization"));
+  if (!user) return context.json({ error: "unauthorized" }, 401);
+  return context.json({ listings: listingsRepo.listForUser(user.id) });
+});
+
+app.post("/me/listings", async (context) => {
+  const user = getSessionUser(context.req.header("authorization"));
+  if (!user) return context.json({ error: "unauthorized" }, 401);
+  const body = listingCreateSchema.parse(await context.req.json());
+  const listing = listingsRepo.create({
+    userId: user.id,
+    rawText: [body.title, body.description].filter(Boolean).join("\n\n"),
+    title: body.title,
+    description: body.description ?? null,
+    priceCents: body.priceCents ?? null,
+    currency: "USD",
+    locationLabel: body.locationLabel ?? null,
+    condition: "unknown",
+    status: "available",
+    tags: [],
+    spacebaseIntentId: null,
+  });
+
+  return context.json({ listing }, 201);
+});
+
+app.get("/me/feed", async (context) => {
+  const user = getSessionUser(context.req.header("authorization"));
+  if (!user) return context.json({ error: "unauthorized" }, 401);
+  const data = (await loadDemoMarketplaceData()) ?? demoMarketplaceData;
+  const feed = data.listings.filter((listing) => listing.status === "available").slice(0, 6);
+
+  return context.json({ feed });
 });
 
 app.get("/me/wants/:id", (context) => {
