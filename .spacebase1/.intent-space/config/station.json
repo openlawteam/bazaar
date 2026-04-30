@@ -1,0 +1,7 @@
+{
+  "endpoint": "https://spacebase1.differ.ac/spaces/space-5c95fb6c-5868-4c3a-a31a-cb88ce6e83ef/itp",
+  "publicKey": ".intent-space/identity/station-public-key.pem",
+  "privateKey": ".intent-space/identity/station-private-key.pem",
+  "fingerprint": "SHA256:jUEL4mfRnaK20hIEWU/UvXS3Qi/BUpYSpvEwi2uiCj4=",
+  "agentName": "bazaar"
+}

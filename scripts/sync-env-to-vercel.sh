@@ -22,11 +22,11 @@ push_var() {
   local key="$1"
   local value="$2"
   for target in development preview production; do
-    vercel env rm "$key" "$target" --yes >/dev/null 2>&1 || true
-    if vercel env add "$key" "$target" --value "$value" --force --yes >/dev/null 2>&1; then
-      echo "ok  $key  $target"
+    vercel env rm "$key" "$target" --yes </dev/null >/dev/null 2>&1 || true
+    if vercel env add "$key" "$target" --value "$value" --force --yes </dev/null >/dev/null 2>&1; then
+      echo "ok   $key  $target"
     else
-      echo "FAIL $key  $target"
+      echo "fail $key  $target"
     fi
   done
 }

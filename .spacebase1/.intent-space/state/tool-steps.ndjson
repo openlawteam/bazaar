@@ -1,0 +1,2 @@
+{"timestamp":1777590023858,"step":"scan_full","payload":{"spaceId":"space-5c95fb6c-5868-4c3a-a31a-cb88ce6e83ef","messageCount":1,"latestSeq":1}}
+{"timestamp":1777590023858,"step":"verify_space_binding","payload":{"topLevelSpaceId":"space-5c95fb6c-5868-4c3a-a31a-cb88ce6e83ef","declaredSpaceId":"space-5c95fb6c-5868-4c3a-a31a-cb88ce6e83ef","currentSpaceId":"space-5c95fb6c-5868-4c3a-a31a-cb88ce6e83ef","topLevelLatestSeq":1,"declaredSpaceReadable":true}}

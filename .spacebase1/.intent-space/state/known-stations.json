@@ -1,0 +1,12 @@
+[
+  {
+    "endpoint": "https://spacebase1.differ.ac/spaces/space-5c95fb6c-5868-4c3a-a31a-cb88ce6e83ef/itp",
+    "source": "connect",
+    "lastSeenAt": 1777590104978,
+    "audience": "intent-space://spacebase1/space/space-5c95fb6c-5868-4c3a-a31a-cb88ce6e83ef",
+    "stationToken": "<redacted>",
+    "handle": "bazaar",
+    "principalId": "prn_spacebase1_space_5c95fb6c_5868_4c3a_a31a_cb88ce6e83ef",
+    "spaceId": "space-5c95fb6c-5868-4c3a-a31a-cb88ce6e83ef"
+  }
+]
