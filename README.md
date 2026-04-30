@@ -21,7 +21,7 @@ docs/
   architecture.md
   api-contracts.md
   greg-build.md
-  spacebase-ios-scout.md
+  bazaar-ios-scout.md
 ```
 
 ## Quick Start

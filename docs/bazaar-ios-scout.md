@@ -1,23 +1,25 @@
 # Bazaar iOS Scout
 
-This is the original iOS-first plan from the brainstorm. The app and repo are now named **Bazaar**; "Spacebase iOS Scout" was the prior plan title. This plan remains useful context for Suvina and for any future iOS/Spacebase surface.
+Original iOS-first plan from the brainstorm, kept for reference. The active product direction is in `docs/plan.md`. This file remains useful context for Suvina and any future Bazaar iOS surface that taps the Spacebase1 protocol.
+
+References to "Spacebase1" below mean the external intent-space protocol Bazaar integrates with, not the product name.
 
 ## Overview
 
-Build a native iOS hackathon app for Bazaar that makes Spacebase1 feel like an ambient agent commons: scan nested intents, summarize active spaces with ADIN, and post useful follow-ups back into Commons. The MVP leans into the protocol's `post`, `scan`, and `enter` model while reusing `adin-chat`'s public streaming chat API instead of porting the web app.
+Build a native iOS app for Bazaar that makes the intent-space feel ambient: scan nested intents on Spacebase1, summarize active spaces with ADIN, and post useful follow-ups back into Commons. The MVP leans into the protocol's `post`, `scan`, and `enter` model while reusing `adin-chat`'s public streaming chat API instead of porting the web app.
 
 ## Recommendation
 
-Build **Bazaar**, a native SwiftUI app for watching and participating in Spacebase1 Commons.
+Build the Bazaar iOS app as a native SwiftUI client for watching and participating in the Spacebase1 Commons.
 
-The app should not be a generic chat UI. It should feel like a mobile radar for agent desires: you open Commons, see live intents, enter nested spaces, ask ADIN to summarize or match related intents, then post a child intent or digest back into the space.
+The app should not be a generic chat UI. It should feel like a mobile radar for agent desires: open Commons, see live intents, enter nested spaces, ask ADIN to summarize or match related intents, then post a child intent or digest back into the space.
 
 Why this direction was compelling:
 
-- It is more interesting than a web dashboard while still demoable in a weekend.
-- It is native to the hackathon protocol: `scan`, `enter`, and `post` are the core interactions.
-- It leverages `adin-chat` where it is strongest: server-side AI orchestration and Swift-compatible streaming API docs.
-- It avoids trying to port the existing Next.js UI.
+- More interesting than a web dashboard while still demoable in a weekend.
+- Native to the hackathon protocol: `scan`, `enter`, and `post` are the core interactions.
+- Leverages `adin-chat` where it is strongest: server-side AI orchestration and Swift-compatible streaming API docs.
+- Avoids trying to port the existing Next.js UI.
 
 ## Product Shape
 
@@ -25,7 +27,7 @@ MVP screens:
 
 - **Commons Radar**: live feed of root-level Commons intents with sender, time, and compact content.
 - **Intent Interior**: tap an intent to `enter` it and inspect child intents, projected `PROMISE`, `ACCEPT`, and `COMPLETE` acts.
-- **ADIN Briefing**: stream an AI summary of the current space: "what is happening, who wants what, and what could be done next."
+- **ADIN Briefing**: stream an AI summary of the current space.
 - **Post Follow-Up**: compose a nested intent such as a question, match suggestion, summary, or project submission.
 - **Demo Mode**: pinned hackathon parent intent plus a one-tap path to show the submitted project interior and judge reasoning.
 
@@ -38,11 +40,11 @@ Optional stretch:
 
 ```mermaid
 flowchart LR
-  iOSApp[SwiftUI iOS App] --> Bridge[Spacebase Bridge]
+  iOSApp[SwiftUI iOS App] --> Bridge[Bazaar Intent-Space Bridge]
   iOSApp --> AdinAPI[ADIN API]
-  Bridge --> Spacebase[Spacebase1 Commons]
+  Bridge --> Commons[Spacebase1 Commons]
   AdinAPI --> Model[ADIN Orchestrator]
-  Spacebase --> Bridge
+  Commons --> Bridge
   Model --> iOSApp
 ```
 
@@ -56,9 +58,9 @@ Implementation approach:
 
 ## Execution Plan
 
-1. Settle MVP scope: name, visual concept, and exact demo script around Commons scanning, entering, summarizing, and posting.
+1. Settle MVP scope: visual concept and exact demo script around Commons scanning, entering, summarizing, and posting.
 2. Bootstrap iOS app: SwiftUI project with feed, detail, composer, and streaming summary views.
-3. Build Spacebase bridge: minimal HTTP service that talks to Spacebase1 and exposes simple app-facing endpoints.
+3. Build the intent-space bridge: minimal HTTP service that talks to Spacebase1 and exposes simple app-facing endpoints.
 4. Integrate ADIN streaming: call `/api/v1/chat`, parse SSE `data:` lines, and render summary deltas in the app.
 5. Make it protocol-native: represent nested spaces clearly and ensure every major action maps to `scan`, `enter`, or `post`.
 6. Prepare submission: repo README, demo instructions, one-liner, and Spacebase1 submission intent using the required parent ID.
