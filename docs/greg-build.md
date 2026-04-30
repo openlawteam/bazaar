@@ -46,8 +46,8 @@ The terminal will log a `spacebase.mock.post` and a `linq.outbound.demo` reply.
 | Linq webhook payloads | `apps/api/src/linq/types.ts` | 2026-02-03 + 2025-01-01 formats |
 | Linq outbound | `apps/api/src/linq/client.ts` | `POST /chats` with idempotency, demo fallback |
 | OTP + sessions | `apps/api/src/auth/otp.ts` | Issue/verify codes, mint Bearer tokens |
-| Conversation router | `apps/api/src/conversation/router.ts` | State machine + want intake handler |
-| Want parser | `apps/api/src/wants/parser.ts` | Regex baseline + optional OpenAI structured parse |
+| Conversation router | `apps/api/src/conversation/router.ts` | State machine, SMS allowlist/trusted-number gate, want intake handler |
+| Want parser | `apps/api/src/wants/parser.ts` | Regex baseline + optional OpenAI structured parse with Bazaar-specific prompt rules |
 | Spacebase client | `apps/api/src/spacebase/client.ts` | Mock + HTTP stub gated on env |
 | HTTP server | `apps/api/src/server.ts` | All endpoints wired |
 
@@ -94,3 +94,5 @@ Optional:
 - `ADIN_API_KEY` reserved for future profile interview streaming
 - `SPACEBASE_AGENT_PRINCIPAL` plus `SPACEBASE_HOME_SPACE_ID` switches the Spacebase client from mock to HTTP
 - `DEMO_MODE=true` skips Linq verification and outbound delivery for local demos
+- `SMS_ALLOWED_PHONE_NUMBERS` limits the SMS route to specific comma-separated E.164-style numbers
+- `SMS_TRUSTED_PHONE_NUMBERS` also allows those numbers and skips OTP so a private demo number goes straight into want intake

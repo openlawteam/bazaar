@@ -2,6 +2,14 @@ import "dotenv/config";
 
 import { z } from "zod";
 
+function parsePhoneList(value: string | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().positive().default(8787),
@@ -20,6 +28,8 @@ const envSchema = z.object({
   LINQ_API_KEY: z.string().optional(),
   LINQ_WEBHOOK_SECRET: z.string().optional(),
   LINQ_FROM_PHONE_NUMBER: z.string().optional(),
+  SMS_ALLOWED_PHONE_NUMBERS: z.string().optional().transform(parsePhoneList),
+  SMS_TRUSTED_PHONE_NUMBERS: z.string().optional().transform(parsePhoneList),
 
   ADIN_API_BASE_URL: z.string().url().default("https://adin.chat/api/v1"),
   ADIN_API_KEY: z.string().optional(),
@@ -42,6 +52,7 @@ export type AppConfig = typeof parsed;
 export interface ReadinessReport {
   config: { nodeEnv: string; port: number };
   linq: { configured: boolean; canSend: boolean };
+  sms: { allowlistEnabled: boolean; trustedNumberCount: number };
   adin: { configured: boolean };
   spacebase: { configured: boolean; homeSpaceId: string | null };
   demoMode: boolean;
@@ -53,6 +64,11 @@ export function describeReadiness(): ReadinessReport {
     linq: {
       configured: Boolean(config.LINQ_WEBHOOK_SECRET),
       canSend: Boolean(config.LINQ_API_KEY && config.LINQ_FROM_PHONE_NUMBER),
+    },
+    sms: {
+      allowlistEnabled:
+        config.SMS_ALLOWED_PHONE_NUMBERS.length > 0 || config.SMS_TRUSTED_PHONE_NUMBERS.length > 0,
+      trustedNumberCount: config.SMS_TRUSTED_PHONE_NUMBERS.length,
     },
     adin: { configured: Boolean(config.ADIN_API_KEY) },
     spacebase: {

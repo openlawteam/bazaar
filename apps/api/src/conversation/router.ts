@@ -23,15 +23,54 @@ const VERIFIED_ACK = "Verified. Tell me what you'd like Bazaar to find for you."
 
 const OTP_REGEX = /^\s*(\d{6})\s*$/;
 
+function normalizePhoneNumber(phoneNumber: string): string {
+  const trimmed = phoneNumber.trim();
+  const hasLeadingPlus = trimmed.startsWith("+");
+  const digits = trimmed.replace(/\D/g, "");
+  if (!digits) return "";
+  return `${hasLeadingPlus ? "+" : ""}${digits}`;
+}
+
+function phoneAccessKey(phoneNumber: string): string {
+  return phoneNumber.replace(/\D/g, "");
+}
+
+function configuredSmsNumbers(): Set<string> {
+  return new Set(
+    [...config.SMS_ALLOWED_PHONE_NUMBERS, ...config.SMS_TRUSTED_PHONE_NUMBERS].map((phoneNumber) =>
+      phoneAccessKey(phoneNumber),
+    ),
+  );
+}
+
+function isSmsAllowed(phoneNumber: string): boolean {
+  const configured = configuredSmsNumbers();
+  return configured.size === 0 || configured.has(phoneAccessKey(phoneNumber));
+}
+
+function isTrustedSmsPhone(phoneNumber: string): boolean {
+  const trusted = new Set(
+    config.SMS_TRUSTED_PHONE_NUMBERS.map((trustedPhoneNumber) =>
+      phoneAccessKey(trustedPhoneNumber),
+    ),
+  );
+  return trusted.has(phoneAccessKey(phoneNumber));
+}
+
 interface ProcessOptions {
   fromPhoneNumber: string;
   text: string;
 }
 
 export async function processInbound(options: ProcessOptions): Promise<void> {
-  const phone = options.fromPhoneNumber.trim();
+  const phone = normalizePhoneNumber(options.fromPhoneNumber);
   const text = options.text.trim();
   if (!phone || !text) return;
+
+  if (!isSmsAllowed(phone)) {
+    logger.warn("conversation.sms.blocked", { phone });
+    return;
+  }
 
   const user = usersRepo.upsertByPhone(phone);
   let conversation =
@@ -48,6 +87,12 @@ export async function processInbound(options: ProcessOptions): Promise<void> {
       usersRepo.markVerified(user.id);
       conversation = conversationRepo.upsert(user.id, { state: "ready" });
     }
+  }
+
+  if (isTrustedSmsPhone(phone) && !user.phoneVerifiedAt) {
+    usersRepo.markVerified(user.id);
+    conversation = conversationRepo.upsert(user.id, { state: "ready" });
+    logger.info("conversation.sms.trusted_verified", { userId: user.id, phone });
   }
 
   if (conversation.state === "needs_verification" && !user.phoneVerifiedAt) {

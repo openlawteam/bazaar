@@ -11,6 +11,11 @@ export interface ParsedWant {
 
 const PRICE_REGEX = /(?:under|below|max|<|less than|up to)\s*\$?\s*(\d{2,5})/i;
 const NEAR_REGEX = /(?:near|in|around)\s+([A-Za-z][A-Za-z\s.'-]{2,60})/i;
+const WANT_PARSER_SYSTEM_PROMPT = [
+  "You are Bazaar's SMS want parser for this repository's shopping-agent flow.",
+  "Extract only the buyer's shopping intent; do not answer as adin-chat or mention internal routing.",
+  "Return JSON with fields title (short), description, maxBudgetCents (integer USD cents or null), currency (default USD), locationLabel (city/region or null).",
+].join(" ");
 
 function heuristicParse(rawText: string): ParsedWant {
   const trimmed = rawText.trim();
@@ -49,8 +54,7 @@ async function parseWithOpenAi(rawText: string): Promise<ParsedWant | null> {
         messages: [
           {
             role: "system",
-            content:
-              'Extract a buyer want as JSON with fields title (short), description, maxBudgetCents (integer, USD cents, or null), currency (default USD), locationLabel (city/region or null).',
+            content: WANT_PARSER_SYSTEM_PROMPT,
           },
           { role: "user", content: rawText },
         ],
