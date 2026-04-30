@@ -1,0 +1,96 @@
+# Greg Build Plan
+
+This is the comprehensive owner doc for Greg's slice of Bazaar. The repo already has the spine implemented; this document describes what is built, how to run it, and what is left.
+
+## Scope
+
+Greg owns the lightweight web/API and SMS path:
+
+- `apps/api`
+- Linq inbound and outbound messaging
+- Phone-number identity and first-time OTP flow
+- Conversation state for SMS/iMessage
+- Buyer profile persistence endpoints
+- Want intake endpoint and Spacebase posting flow
+- ADIN/OpenAI integration for profile interviews and want parsing
+- Deployment and environment variables for the API
+
+## Demo Path
+
+```text
+Linq inbound -> verify HMAC -> dedupe by event_id -> parse text -> upsert user
+  -> if unverified: issue OTP and prompt
+  -> if verified: parse want -> persist -> post Spacebase INTENT -> SMS ack
+```
+
+Smoke test in demo mode (no Linq creds needed):
+
+```bash
+DEMO_MODE=true npm run dev:api
+
+curl -sS -H "content-type: application/json" \
+  -d '{"api_version":"v3","webhook_version":"2026-02-03","event_type":"message.received","event_id":"smoke-001","data":{"id":"msg-001","direction":"inbound","sender_handle":{"handle":"+15555550123","id":"h1"},"parts":[{"type":"text","value":"Find a used Herman Miller chair under $500 near Brooklyn"}],"chat":{"id":"chat-1"}}}' \
+  http://localhost:8787/webhooks/linq/inbound
+```
+
+The terminal will log a `spacebase.mock.post` and a `linq.outbound.demo` reply.
+
+## What Is Built
+
+| Area | File | Notes |
+| --- | --- | --- |
+| Typed config + readiness | `apps/api/src/config.ts` | Zod-validated env, `describeReadiness()` summary |
+| Logger | `apps/api/src/logger.ts` | Structured JSON logs |
+| File-backed store | `apps/api/src/db/store.ts`, `db/repos.ts` | Hackathon-grade persistence behind repos |
+| Linq HMAC verification | `apps/api/src/linq/verify.ts` | `X-Webhook-Signature` + timestamp tolerance |
+| Linq webhook payloads | `apps/api/src/linq/types.ts` | 2026-02-03 + 2025-01-01 formats |
+| Linq outbound | `apps/api/src/linq/client.ts` | `POST /chats` with idempotency, demo fallback |
+| OTP + sessions | `apps/api/src/auth/otp.ts` | Issue/verify codes, mint Bearer tokens |
+| Conversation router | `apps/api/src/conversation/router.ts` | State machine + want intake handler |
+| Want parser | `apps/api/src/wants/parser.ts` | Regex baseline + optional OpenAI structured parse |
+| Spacebase client | `apps/api/src/spacebase/client.ts` | Mock + HTTP stub gated on env |
+| HTTP server | `apps/api/src/server.ts` | All endpoints wired |
+
+## Endpoints
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/health` | Readiness summary for each subsystem |
+| POST | `/webhooks/linq/inbound` | Linq webhook with HMAC verification + dedupe |
+| POST | `/auth/otp/start` | Send OTP code via Linq (returns dev code in non-prod) |
+| POST | `/auth/otp/verify` | Verify code, mint session token |
+| GET | `/me` | Current user (Bearer token required) |
+| GET | `/me/preferences` | Buyer preferences |
+| GET | `/me/wants` | Wants list |
+| GET | `/me/wants/:id` | Want detail with candidates |
+| POST | `/wants` | Manual want intake (phone or session) |
+
+## What Is Left
+
+These are the next steps in priority order.
+
+1. Provision a Linq webhook subscription pointing at `/webhooks/linq/inbound?version=2026-02-03` and set `LINQ_WEBHOOK_SECRET`, `LINQ_API_KEY`, `LINQ_FROM_PHONE_NUMBER` in `.env`.
+2. Wire ADIN streaming responses (`ADIN_API_BASE_URL` + `ADIN_API_KEY`) for richer want parsing and profile interviews. The repo currently uses a regex baseline plus an optional OpenAI fallback when `OPENAI_API_KEY` is present.
+3. Build the profile interview flow on top of the existing `profiling` state. After OTP verify, run a 3 to 5 question interview that saves `BuyerPreference` rows.
+4. Replace the file-backed store with Postgres or SQLite when persistence/scale matters. The repo pattern in `apps/api/src/db/repos.ts` is built to swap.
+5. Finish the real Spacebase HTTP client: provision a home space via the website-prepared agent flow, set `SPACEBASE_AGENT_PRINCIPAL` and `SPACEBASE_HOME_SPACE_ID`, then implement signed `INTENT` posting in `apps/api/src/spacebase/client.ts`.
+6. Hand off wants to Jamie's shopping adapters (`packages/shopping`) and post candidates back into the want's interior.
+7. Add approval flow handling. Reply parsing for `1`, `2`, `skip`, `cancel` in the conversation router when state is `awaiting_approval`.
+8. Push outbound update SMS messages once candidates are scored, and emit Spacebase `PROMISE` and `COMPLETE` projections for each agent action.
+9. Deploy the API somewhere reachable by Linq and Suvina's iOS build. Vercel, Railway, Fly, or a small VPS work fine.
+
+## Environment
+
+The full env template lives in `.env.example`. The minimum to go live with Linq:
+
+- `LINQ_WEBHOOK_SECRET`
+- `LINQ_API_KEY`
+- `LINQ_FROM_PHONE_NUMBER`
+- `SESSION_SECRET`
+
+Optional:
+
+- `OPENAI_API_KEY` enables LLM want parsing
+- `ADIN_API_KEY` reserved for future profile interview streaming
+- `SPACEBASE_AGENT_PRINCIPAL` plus `SPACEBASE_HOME_SPACE_ID` switches the Spacebase client from mock to HTTP
+- `DEMO_MODE=true` skips Linq verification and outbound delivery for local demos

@@ -14,7 +14,9 @@
     "@bazaar/shopping": "file:../../packages/shopping",
     "@bazaar/spacebase": "file:../../packages/spacebase",
     "@hono/node-server": "latest",
+    "dotenv": "latest",
     "hono": "latest",
+    "nanoid": "latest",
     "zod": "latest"
   }
 }

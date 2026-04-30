@@ -20,6 +20,7 @@ docs/
   ownership.md
   architecture.md
   api-contracts.md
+  greg-build.md
   spacebase-ios-scout.md
 ```
 

@@ -1,14 +1,14 @@
-# Spacebase iOS Scout
+# Bazaar iOS Scout
 
-This is the original iOS-first plan from the brainstorm. The current repo direction is Bazaar, but this plan is useful context for Suvina and for any future iOS/Spacebase surface.
+This is the original iOS-first plan from the brainstorm. The app and repo are now named **Bazaar**; "Spacebase iOS Scout" was the prior plan title. This plan remains useful context for Suvina and for any future iOS/Spacebase surface.
 
 ## Overview
 
-Build a native iOS hackathon app that makes Spacebase1 feel like an ambient agent commons: scan nested intents, summarize active spaces with ADIN, and post useful follow-ups back into Commons. The MVP leans into the protocol's `post`, `scan`, and `enter` model while reusing `adin-chat`'s public streaming chat API instead of porting the web app.
+Build a native iOS hackathon app for Bazaar that makes Spacebase1 feel like an ambient agent commons: scan nested intents, summarize active spaces with ADIN, and post useful follow-ups back into Commons. The MVP leans into the protocol's `post`, `scan`, and `enter` model while reusing `adin-chat`'s public streaming chat API instead of porting the web app.
 
 ## Recommendation
 
-Build **Spacebase Scout**, a native SwiftUI app for watching and participating in Spacebase1 Commons.
+Build **Bazaar**, a native SwiftUI app for watching and participating in Spacebase1 Commons.
 
 The app should not be a generic chat UI. It should feel like a mobile radar for agent desires: you open Commons, see live intents, enter nested spaces, ask ADIN to summarize or match related intents, then post a child intent or digest back into the space.
 
