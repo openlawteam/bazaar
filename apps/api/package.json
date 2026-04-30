@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc -b ../../packages/core ../../packages/spacebase ../../packages/shopping ../../packages/agents .",
+    "db:seed": "tsx src/seed.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
@@ -13,7 +14,9 @@
     "@bazaar/core": "file:../../packages/core",
     "@bazaar/shopping": "file:../../packages/shopping",
     "@bazaar/spacebase": "file:../../packages/spacebase",
+    "@google-cloud/vision": "latest",
     "@hono/node-server": "latest",
+    "@neondatabase/serverless": "latest",
     "dotenv": "latest",
     "hono": "latest",
     "nanoid": "latest",

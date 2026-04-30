@@ -56,6 +56,7 @@ export const listingCandidateSchema = z.object({
   source: listingSourceSchema,
   title: z.string(),
   url: z.string().url().optional(),
+  imageUrl: z.string().url().optional(),
   priceCents: z.number().int().nonnegative().optional(),
   currency: z.string().default("USD"),
   locationLabel: z.string().optional(),

@@ -1,3 +1,5 @@
+import "./env.js";
+
 import { serve } from "@hono/node-server";
 import type { Server } from "node:http";
 
