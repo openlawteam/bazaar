@@ -19,6 +19,8 @@ docs/
   plan.md
   ownership.md
   architecture.md
+  api-contracts.md
+  spacebase-ios-scout.md
 ```
 
 ## Quick Start
