@@ -11,7 +11,7 @@ import { linqClient } from "../linq/client.js";
 import { parseWantText, type ParsedWant } from "../wants/parser.js";
 import { createSpacebaseClient } from "../spacebase/client.js";
 import { adinClient } from "../adin/client.js";
-import { SMS_AGENT_SYSTEM_PROMPT, buildIntakeUserMessage } from "../adin/prompt.js";
+import { buildIntakeUserMessage } from "../adin/prompt.js";
 
 const spacebase = createSpacebaseClient();
 
@@ -172,14 +172,17 @@ async function composeIntakeReply(input: {
 }): Promise<string> {
   if (adinClient.isConfigured()) {
     const adinResult = await adinClient.complete({
-      systemPrompt: SMS_AGENT_SYSTEM_PROMPT,
       userMessage: buildIntakeUserMessage({
         rawText: input.rawText,
         parsed: input.parsed,
       }),
     });
     if (adinResult.ok && adinResult.text) {
-      logger.info("conversation.reply.source", { userId: input.userId, source: "adin" });
+      logger.info("conversation.reply.source", {
+        userId: input.userId,
+        source: "adin",
+        adinConversationId: adinResult.conversationId,
+      });
       return adinResult.text;
     }
     logger.warn("conversation.reply.adin_fallback", {

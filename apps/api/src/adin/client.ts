@@ -1,122 +1,168 @@
+import { randomUUID } from "node:crypto";
+
 import { config } from "../config.js";
 import { logger } from "../logger.js";
 
-export interface AdinChatMessage {
-  role: "system" | "user" | "assistant";
-  content: string;
+export interface AdinUserMessage {
+  text: string;
 }
 
 export interface AdinCompleteOptions {
-  systemPrompt: string;
+  /** Single-turn user message. The public ADIN chat API does not accept a caller-controlled
+   * system prompt — voice and behavior instructions need to be packaged inside the user text. */
   userMessage: string;
-  history?: AdinChatMessage[];
+  /** Optional UUID conversation id; one is generated if omitted. */
+  conversationId?: string;
+  /** Hard cap on the returned text. SMS messages should stay under 320 chars. */
   maxOutputChars?: number;
+  /** Wall-clock cap for the whole call. ADIN's orchestrator can take a while; default 30s. */
   timeoutMs?: number;
+  /** Workspace context. "personal" is the only one that always works for v1 keys. */
+  workspace?: "personal" | "network";
 }
 
 export interface AdinCompleteResult {
   ok: boolean;
   text: string | null;
   reason: string | null;
+  conversationId: string | null;
 }
 
-interface ChoiceShape {
-  message?: { content?: unknown };
-  delta?: { content?: unknown };
+interface UiTextDeltaChunk {
+  type: "text-delta";
+  delta?: unknown;
+  textDelta?: unknown;
+}
+
+interface UiTextChunk {
+  type: "text";
   text?: unknown;
 }
 
-interface OpenAiLikeBody {
-  choices?: ChoiceShape[];
-  message?: { content?: unknown };
-  content?: unknown;
-  output?: unknown;
-  text?: unknown;
+interface UiErrorChunk {
+  type: "error";
+  errorText?: unknown;
+  message?: unknown;
 }
 
-const DEFAULT_TIMEOUT_MS = 12_000;
+interface UiFinishChunk {
+  type: "finish" | "finish-step";
+}
+
+type UiChunk =
+  | UiTextDeltaChunk
+  | UiTextChunk
+  | UiErrorChunk
+  | UiFinishChunk
+  | { type: string; [key: string]: unknown };
+
+const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_MAX_OUTPUT_CHARS = 320;
 
-function pickTextFromJson(payload: unknown): string | null {
-  if (!payload || typeof payload !== "object") return null;
-  const body = payload as OpenAiLikeBody;
+function asString(value: unknown): string | null {
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
 
-  const fromChoices = body.choices?.[0];
-  if (fromChoices) {
-    const messageContent = fromChoices.message?.content;
-    if (typeof messageContent === "string" && messageContent.trim()) return messageContent.trim();
-    const deltaContent = fromChoices.delta?.content;
-    if (typeof deltaContent === "string" && deltaContent.trim()) return deltaContent.trim();
-    if (typeof fromChoices.text === "string" && fromChoices.text.trim()) {
-      return fromChoices.text.trim();
-    }
+function extractDeltaFromChunk(chunk: UiChunk): { kind: "text"; value: string } | { kind: "error"; value: string } | null {
+  if (chunk.type === "text-delta") {
+    const fromDelta = asString((chunk as UiTextDeltaChunk).delta);
+    if (fromDelta) return { kind: "text", value: fromDelta };
+    const fromTextDelta = asString((chunk as UiTextDeltaChunk).textDelta);
+    if (fromTextDelta) return { kind: "text", value: fromTextDelta };
+    return null;
   }
-
-  const fromMessage = body.message?.content;
-  if (typeof fromMessage === "string" && fromMessage.trim()) return fromMessage.trim();
-
-  if (typeof body.content === "string" && body.content.trim()) return body.content.trim();
-  if (typeof body.output === "string" && body.output.trim()) return body.output.trim();
-  if (typeof body.text === "string" && body.text.trim()) return body.text.trim();
-
+  if (chunk.type === "text") {
+    const fromText = asString((chunk as UiTextChunk).text);
+    if (fromText) return { kind: "text", value: fromText };
+    return null;
+  }
+  if (chunk.type === "error") {
+    const errorText =
+      asString((chunk as UiErrorChunk).errorText) ??
+      asString((chunk as UiErrorChunk).message) ??
+      "stream_error";
+    return { kind: "error", value: errorText };
+  }
   return null;
 }
 
-function pickTextFromSseLine(line: string): string | null {
-  const trimmed = line.trim();
-  if (!trimmed.startsWith("data:")) return null;
-  const payload = trimmed.slice("data:".length).trim();
-  if (!payload || payload === "[DONE]") return null;
-  try {
-    const json = JSON.parse(payload) as OpenAiLikeBody;
-    return pickTextFromJson(json);
-  } catch {
-    return null;
+async function readUiMessageStream(response: Response): Promise<{ text: string; error: string | null }> {
+  const reader = response.body?.getReader();
+  if (!reader) return { text: "", error: "no_response_body" };
+
+  const decoder = new TextDecoder();
+  const collected: string[] = [];
+  let firstError: string | null = null;
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    let separator = buffer.indexOf("\n\n");
+    while (separator !== -1) {
+      const event = buffer.slice(0, separator);
+      buffer = buffer.slice(separator + 2);
+      separator = buffer.indexOf("\n\n");
+
+      for (const line of event.split(/\r?\n/)) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith("data:")) continue;
+        const payload = trimmed.slice("data:".length).trim();
+        if (!payload || payload === "[DONE]") continue;
+        let chunk: UiChunk;
+        try {
+          chunk = JSON.parse(payload) as UiChunk;
+        } catch {
+          continue;
+        }
+        const extracted = extractDeltaFromChunk(chunk);
+        if (!extracted) continue;
+        if (extracted.kind === "error") {
+          if (!firstError) firstError = extracted.value;
+        } else {
+          collected.push(extracted.value);
+        }
+      }
+    }
   }
+
+  return { text: collected.join("").trim(), error: firstError };
 }
 
-async function readAsText(response: Response): Promise<string> {
-  const contentType = response.headers.get("content-type") ?? "";
-  const raw = await response.text();
+function trimToSms(text: string, maxChars: number): string {
+  const collapsed = text.replace(/\s+/g, " ").trim();
+  if (collapsed.length <= maxChars) return collapsed;
+  return `${collapsed.slice(0, maxChars - 1).trimEnd()}…`;
+}
 
-  if (contentType.includes("application/json")) {
-    try {
-      const json = JSON.parse(raw) as unknown;
-      const picked = pickTextFromJson(json);
-      if (picked) return picked;
-    } catch {
-      // fall through to SSE / raw handling
-    }
-  }
-
-  if (contentType.includes("event-stream") || raw.includes("data:")) {
-    const parts: string[] = [];
-    for (const line of raw.split(/\r?\n/)) {
-      const fragment = pickTextFromSseLine(line);
-      if (fragment) parts.push(fragment);
-    }
-    if (parts.length > 0) return parts.join("");
-  }
-
-  return raw.trim();
+function buildUiMessages(userText: string): unknown[] {
+  return [
+    {
+      role: "user",
+      parts: [{ type: "text", text: userText }],
+    },
+  ];
 }
 
 export const adinClient = {
   isConfigured(): boolean {
-    return Boolean(config.ADIN_API_KEY);
+    const key = config.ADIN_API_KEY;
+    return typeof key === "string" && /^adin_(live|test)_/.test(key);
   },
 
   async complete(options: AdinCompleteOptions): Promise<AdinCompleteResult> {
-    if (!config.ADIN_API_KEY) {
-      return { ok: false, text: null, reason: "adin_api_key_missing" };
+    const apiKey = config.ADIN_API_KEY;
+    if (!apiKey) {
+      return { ok: false, text: null, reason: "adin_api_key_missing", conversationId: null };
+    }
+    if (!/^adin_(live|test)_/.test(apiKey)) {
+      return { ok: false, text: null, reason: "adin_api_key_malformed", conversationId: null };
     }
 
-    const messages: AdinChatMessage[] = [
-      { role: "system", content: options.systemPrompt },
-      ...(options.history ?? []),
-      { role: "user", content: options.userMessage },
-    ];
-
+    const conversationId = options.conversationId ?? randomUUID();
+    const idempotencyKey = randomUUID();
     const controller = new AbortController();
     const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -126,13 +172,15 @@ export const adinClient = {
         method: "POST",
         signal: controller.signal,
         headers: {
-          Authorization: `Bearer ${config.ADIN_API_KEY}`,
+          Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
-          Accept: "application/json, text/event-stream",
+          Accept: "text/event-stream, application/json",
+          "Idempotency-Key": idempotencyKey,
         },
         body: JSON.stringify({
-          messages,
-          stream: false,
+          messages: buildUiMessages(options.userMessage),
+          conversationId,
+          workspace: options.workspace ?? "personal",
         }),
       });
 
@@ -142,26 +190,38 @@ export const adinClient = {
           status: response.status,
           body: errorBody.slice(0, 500),
         });
-        return { ok: false, text: null, reason: `http_${response.status}` };
+        return {
+          ok: false,
+          text: null,
+          reason: `http_${response.status}`,
+          conversationId,
+        };
       }
 
-      const text = await readAsText(response);
+      const { text, error } = await readUiMessageStream(response);
+      if (error && !text) {
+        return { ok: false, text: null, reason: error, conversationId };
+      }
       if (!text) {
-        return { ok: false, text: null, reason: "empty_response" };
+        return { ok: false, text: null, reason: "empty_response", conversationId };
       }
 
       const maxChars = options.maxOutputChars ?? DEFAULT_MAX_OUTPUT_CHARS;
-      const trimmed = text.length > maxChars ? text.slice(0, maxChars).trim() : text;
-      return { ok: true, text: trimmed, reason: null };
-    } catch (error) {
+      return {
+        ok: true,
+        text: trimToSms(text, maxChars),
+        reason: null,
+        conversationId,
+      };
+    } catch (caught) {
       const reason =
-        error instanceof Error && error.name === "AbortError"
+        caught instanceof Error && caught.name === "AbortError"
           ? "timeout"
-          : error instanceof Error
-            ? error.message
+          : caught instanceof Error
+            ? caught.message
             : "unknown";
       logger.warn("adin.complete.error", { reason });
-      return { ok: false, text: null, reason };
+      return { ok: false, text: null, reason, conversationId: null };
     } finally {
       clearTimeout(timer);
     }
