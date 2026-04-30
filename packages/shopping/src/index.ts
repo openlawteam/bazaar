@@ -150,6 +150,16 @@ export const demoBuyerPreferences: BuyerPreference[] = [
     source: "manual",
     updatedAt: now,
   },
+  {
+    id: "pref-demo-electronics",
+    userId: demoBuyer.id,
+    category: "electronics",
+    key: "audio",
+    value: "prefers Apple audio gear with clear serial proof, local pickup, and no activation lock issues",
+    confidence: 0.82,
+    source: "manual",
+    updatedAt: now,
+  },
 ];
 
 export const demoSellers: DemoSeller[] = [
@@ -202,6 +212,26 @@ export const demoSellers: DemoSeller[] = [
     contactHandle: "sms:+17185550199",
     fulfillmentPolicy: "local_pickup",
     notes: "Local seller with detailed maintenance history.",
+  },
+  {
+    id: "seller-airpods-dumbo",
+    displayName: "Nina in Dumbo",
+    locationLabel: "Dumbo, Brooklyn",
+    trustScore: 0.92,
+    responseSpeed: "fast",
+    contactHandle: "sms:+17185550245",
+    fulfillmentPolicy: "local_pickup",
+    notes: "Verified seller with receipt photo, serial number, and same-day pickup near York St.",
+  },
+  {
+    id: "seller-airpods-risky",
+    displayName: "AudioFlip_88",
+    locationLabel: "Bed-Stuy, Brooklyn",
+    trustScore: 0.38,
+    responseSpeed: "medium",
+    contactHandle: "marketplace:audioflip-88",
+    fulfillmentPolicy: "local_pickup",
+    notes: "Avoids serial-number questions and asks for a deposit before meeting.",
   },
 ];
 
@@ -280,6 +310,35 @@ export const demoListings: DemoListing[] = [
     source: "demo",
     status: "available",
     tags: ["road bike", "trek", "54cm", "brooklyn", "prospect park", "local pickup"],
+  },
+  {
+    id: "listing-airpods-max-360",
+    sellerId: "seller-airpods-dumbo",
+    title: "Apple AirPods Max - silver, lightly used",
+    description:
+      "Silver AirPods Max with case, box, receipt photo, and visible serial number. Battery and ANC working. Pickup in Dumbo.",
+    priceCents: 36000,
+    currency: "USD",
+    locationLabel: "Dumbo, Brooklyn",
+    imageUrl: "https://images.unsplash.com/photo-1609081219090-a6d81d3085bf?q=80&w=1200&auto=format&fit=crop",
+    condition: "excellent",
+    source: "demo",
+    status: "available",
+    tags: ["apple", "airpods max", "headphones", "over-ear headphones", "noise cancelling", "silver", "brooklyn"],
+  },
+  {
+    id: "listing-airpods-max-250-risky",
+    sellerId: "seller-airpods-risky",
+    title: "AirPods Max cheap today only",
+    description: "Works fine. No box. Need deposit to hold. Can send serial after payment.",
+    priceCents: 25000,
+    currency: "USD",
+    locationLabel: "Bed-Stuy, Brooklyn",
+    condition: "unknown",
+    source: "demo",
+    status: "available",
+    riskNotes: "Too-cheap price, no box or serial proof, and deposit-before-serial request.",
+    tags: ["airpods", "airpods max", "headphones", "cheap", "deposit", "brooklyn"],
   },
 ];
 
