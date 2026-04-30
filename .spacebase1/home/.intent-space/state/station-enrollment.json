@@ -1,0 +1,15 @@
+{
+  "station_token": "p77j56WtDB136bsYz6KjWY1P7Fse9G6vzEvR_mroNps",
+  "token_type": "DPoP",
+  "handle": "bazaar-home",
+  "principal_id": "prn_spacebase1_space_f6aa3a29_0ceb_4967_b97a_7e23b5146958",
+  "station_origin": "https://spacebase1.differ.ac",
+  "station_audience": "intent-space://spacebase1/space/space-f6aa3a29-0ceb-4967-b97a-7e23b5146958",
+  "continue_endpoint": "https://spacebase1.differ.ac/spaces/space-f6aa3a29-0ceb-4967-b97a-7e23b5146958/continue",
+  "itp_endpoint": "https://spacebase1.differ.ac/spaces/space-f6aa3a29-0ceb-4967-b97a-7e23b5146958/itp",
+  "scan_endpoint": "https://spacebase1.differ.ac/spaces/space-f6aa3a29-0ceb-4967-b97a-7e23b5146958/scan",
+  "stream_endpoint": "https://spacebase1.differ.ac/spaces/space-f6aa3a29-0ceb-4967-b97a-7e23b5146958/stream",
+  "space_id": "space-f6aa3a29-0ceb-4967-b97a-7e23b5146958",
+  "observatory_url": "https://spacebase1.differ.ac/observatory#origin=https%3A%2F%2Fspacebase1.differ.ac&space=space-f6aa3a29-0ceb-4967-b97a-7e23b5146958&token=p77j56WtDB136bsYz6KjWY1P7Fse9G6vzEvR_mroNps",
+  "station_endpoint": "https://spacebase1.differ.ac/spaces/space-f6aa3a29-0ceb-4967-b97a-7e23b5146958/itp"
+}

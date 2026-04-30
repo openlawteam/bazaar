@@ -1,0 +1,15 @@
+{
+  "station_token": "nRLXUyXnAp9G8s8x5olj1PYtxI5qh1QaH70Phooa1SI",
+  "token_type": "DPoP",
+  "handle": "bazaar-commons",
+  "principal_id": "prn_spacebase1_commons_wkncnjsnnws3bqtakjjqjqfi",
+  "station_origin": "https://spacebase1.differ.ac",
+  "station_audience": "intent-space://spacebase1/space/commons",
+  "continue_endpoint": "https://spacebase1.differ.ac/spaces/commons/continue",
+  "itp_endpoint": "https://spacebase1.differ.ac/spaces/commons/itp",
+  "scan_endpoint": "https://spacebase1.differ.ac/spaces/commons/scan",
+  "stream_endpoint": "https://spacebase1.differ.ac/spaces/commons/stream",
+  "space_id": "commons",
+  "observatory_url": "https://spacebase1.differ.ac/observatory#origin=https%3A%2F%2Fspacebase1.differ.ac&space=commons&token=nRLXUyXnAp9G8s8x5olj1PYtxI5qh1QaH70Phooa1SI",
+  "station_endpoint": "https://spacebase1.differ.ac/spaces/commons/itp"
+}

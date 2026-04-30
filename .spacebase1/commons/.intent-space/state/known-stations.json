@@ -1,0 +1,12 @@
+[
+  {
+    "endpoint": "https://spacebase1.differ.ac/spaces/commons/itp",
+    "source": "connect",
+    "lastSeenAt": 1777590453924,
+    "audience": "intent-space://spacebase1/space/commons",
+    "stationToken": "nRLXUyXnAp9G8s8x5olj1PYtxI5qh1QaH70Phooa1SI",
+    "handle": "bazaar-commons",
+    "principalId": "prn_spacebase1_commons_wkncnjsnnws3bqtakjjqjqfi",
+    "spaceId": "commons"
+  }
+]
