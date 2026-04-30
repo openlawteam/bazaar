@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "types": ["node"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "baseUrl": ".",
+    "paths": {
+      "@bazaar/agents": ["packages/agents/src/index.ts"],
+      "@bazaar/core": ["packages/core/src/index.ts"],
+      "@bazaar/shopping": ["packages/shopping/src/index.ts"],
+      "@bazaar/spacebase": ["packages/spacebase/src/index.ts"]
+    },
+    "ignoreDeprecations": "6.0",
+    "composite": true,
+    "strict": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "skipLibCheck": true
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "bazaar",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Demand-first personal shopping agent infrastructure for SMS, iOS, and intent-space coordination.",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "tsc -b packages/core packages/spacebase packages/shopping packages/agents apps/api --pretty false",
+    "dev:api": "npm run dev --workspace @bazaar/api",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "tsx": "latest",
+    "typescript": "latest",
+    "vitest": "latest"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

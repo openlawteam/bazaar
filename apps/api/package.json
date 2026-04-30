@@ -1,0 +1,20 @@
+{
+  "name": "@bazaar/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@bazaar/agents": "file:../../packages/agents",
+    "@bazaar/core": "file:../../packages/core",
+    "@bazaar/shopping": "file:../../packages/shopping",
+    "@bazaar/spacebase": "file:../../packages/spacebase",
+    "@hono/node-server": "latest",
+    "hono": "latest",
+    "zod": "latest"
+  }
+}
