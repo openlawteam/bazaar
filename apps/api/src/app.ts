@@ -359,6 +359,9 @@ function createWantFromText(input: {
 
 function buildWantTitle(rawText: string): string {
   const lower = rawText.toLowerCase();
+  if (lower.includes("airpods") || lower.includes("airpod") || lower.includes("headphone")) {
+    return "Used Apple AirPods Max";
+  }
   if (lower.includes("herman") || lower.includes("aeron") || lower.includes("chair")) {
     return "Used Herman Miller Aeron chair";
   }

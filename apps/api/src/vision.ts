@@ -22,6 +22,9 @@ export async function analyzeProductImage(input: {
   if (isKnownDemoImage(input.fileName, input.message)) {
     return demoAeronFacts(true);
   }
+  if (isKnownAirPodsImage(input.fileName, input.message)) {
+    return demoAirPodsFacts(true);
+  }
 
   try {
     visionClient ??= createVisionClient();
@@ -81,12 +84,14 @@ function normalizeVisionResult(result: vision.protos.google.cloud.vision.v1.IAnn
   const combinedText = [...labels, ...text, ...webEntities, ...logos].join(" ").toLowerCase();
 
   const brandGuess = guessFromNeedles(combinedText, ["Herman Miller", "Steelcase", "Knoll", "Trek", "Apple"]);
-  const modelGuess = guessFromNeedles(combinedText, ["Aeron", "Embody", "Leap", "ThinkPad", "MacBook"]);
+  const modelGuess = guessFromNeedles(combinedText, ["AirPods Max", "Aeron", "Embody", "Leap", "ThinkPad", "MacBook"]);
   const itemType = combinedText.includes("bicycle") || combinedText.includes("bike")
     ? "road bike"
-    : combinedText.includes("chair") || combinedText.includes("furniture")
-      ? "office chair"
-      : labels[0] ?? "item";
+    : combinedText.includes("headphone") || combinedText.includes("airpods") || combinedText.includes("audio")
+      ? "over-ear headphones"
+      : combinedText.includes("chair") || combinedText.includes("furniture")
+        ? "office chair"
+        : labels[0] ?? "item";
   const confidence = Math.max(
     0.45,
     ...[
@@ -134,9 +139,28 @@ function demoAeronFacts(fallbackUsed: boolean): ProductVisionFacts {
   };
 }
 
+function demoAirPodsFacts(fallbackUsed: boolean): ProductVisionFacts {
+  return {
+    itemType: "over-ear headphones",
+    brandGuess: "Apple",
+    modelGuess: "AirPods Max",
+    colorGuess: "silver",
+    extractedText: ["AirPods Max"],
+    labels: ["headphones", "audio equipment", "consumer electronics"],
+    webEntities: ["Apple AirPods Max", "over-ear headphones", "noise cancelling headphones"],
+    confidence: 0.95,
+    fallbackUsed,
+  };
+}
+
 function isKnownDemoImage(fileName?: string, message?: string): boolean {
   const haystack = `${fileName ?? ""} ${message ?? ""}`.toLowerCase();
   return haystack.includes("aeron") || haystack.includes("herman") || haystack.includes("chair-demo");
+}
+
+function isKnownAirPodsImage(fileName?: string, message?: string): boolean {
+  const haystack = `${fileName ?? ""} ${message ?? ""}`.toLowerCase();
+  return haystack.includes("airpods") || haystack.includes("airpod") || haystack.includes("headphones-demo");
 }
 
 function guessFromNeedles(haystack: string, needles: string[]): string | undefined {
