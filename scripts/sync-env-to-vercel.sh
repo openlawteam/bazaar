@@ -6,6 +6,9 @@
 
 set -uo pipefail
 
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$REPO_ROOT"
+
 ENV_FILE="${1:-.env}"
 
 if [[ ! -f "$ENV_FILE" ]]; then
@@ -15,6 +18,12 @@ fi
 
 if ! command -v vercel >/dev/null 2>&1; then
   echo "vercel CLI not installed" >&2
+  exit 1
+fi
+
+if [[ ! -f "$REPO_ROOT/.vercel/project.json" ]]; then
+  echo "vercel link missing at $REPO_ROOT/.vercel/project.json" >&2
+  echo "run: vercel link --yes --project bazaar --scope tributelabs" >&2
   exit 1
 fi
 

@@ -28,14 +28,23 @@ export interface AdinCompleteResult {
   conversationId: string | null;
 }
 
+interface UiStartChunk {
+  type: "start";
+  messageId?: unknown;
+}
+
 interface UiTextDeltaChunk {
   type: "text-delta";
+  id?: unknown;
+  messageId?: unknown;
   delta?: unknown;
   textDelta?: unknown;
 }
 
 interface UiTextChunk {
   type: "text";
+  id?: unknown;
+  messageId?: unknown;
   text?: unknown;
 }
 
@@ -50,6 +59,7 @@ interface UiFinishChunk {
 }
 
 type UiChunk =
+  | UiStartChunk
   | UiTextDeltaChunk
   | UiTextChunk
   | UiErrorChunk
@@ -63,37 +73,31 @@ function asString(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
 }
 
-function extractDeltaFromChunk(chunk: UiChunk): { kind: "text"; value: string } | { kind: "error"; value: string } | null {
-  if (chunk.type === "text-delta") {
-    const fromDelta = asString((chunk as UiTextDeltaChunk).delta);
-    if (fromDelta) return { kind: "text", value: fromDelta };
-    const fromTextDelta = asString((chunk as UiTextDeltaChunk).textDelta);
-    if (fromTextDelta) return { kind: "text", value: fromTextDelta };
-    return null;
-  }
-  if (chunk.type === "text") {
-    const fromText = asString((chunk as UiTextChunk).text);
-    if (fromText) return { kind: "text", value: fromText };
-    return null;
-  }
-  if (chunk.type === "error") {
-    const errorText =
-      asString((chunk as UiErrorChunk).errorText) ??
-      asString((chunk as UiErrorChunk).message) ??
-      "stream_error";
-    return { kind: "error", value: errorText };
-  }
-  return null;
-}
-
+/**
+ * The ADIN stream emits multiple "messages" per response (a fast-ack message and
+ * the main orchestrator answer), each demarcated by `{type:"start", messageId}`.
+ * We bucket text-delta chunks per message and return only the last one — that's
+ * the orchestrator's real reply, not the placeholder ack.
+ */
 async function readUiMessageStream(response: Response): Promise<{ text: string; error: string | null }> {
   const reader = response.body?.getReader();
   if (!reader) return { text: "", error: "no_response_body" };
 
   const decoder = new TextDecoder();
-  const collected: string[] = [];
+  const messageBuffers = new Map<string, string[]>();
+  const messageOrder: string[] = [];
+  let activeMessageId: string | null = null;
   let firstError: string | null = null;
   let buffer = "";
+
+  const ensureMessage = (rawId: unknown): string => {
+    const messageId = typeof rawId === "string" && rawId.length > 0 ? rawId : "default";
+    if (!messageBuffers.has(messageId)) {
+      messageBuffers.set(messageId, []);
+      messageOrder.push(messageId);
+    }
+    return messageId;
+  };
 
   while (true) {
     const { done, value } = await reader.read();
@@ -117,18 +121,51 @@ async function readUiMessageStream(response: Response): Promise<{ text: string; 
         } catch {
           continue;
         }
-        const extracted = extractDeltaFromChunk(chunk);
-        if (!extracted) continue;
-        if (extracted.kind === "error") {
-          if (!firstError) firstError = extracted.value;
-        } else {
-          collected.push(extracted.value);
+
+        if (chunk.type === "start") {
+          activeMessageId = ensureMessage((chunk as UiStartChunk).messageId);
+          continue;
+        }
+
+        if (chunk.type === "text-delta") {
+          const c = chunk as UiTextDeltaChunk;
+          const messageId = ensureMessage(c.messageId ?? c.id ?? activeMessageId);
+          activeMessageId = messageId;
+          const fragment = asString(c.delta) ?? asString(c.textDelta);
+          if (fragment) messageBuffers.get(messageId)!.push(fragment);
+          continue;
+        }
+
+        if (chunk.type === "text") {
+          const c = chunk as UiTextChunk;
+          const messageId = ensureMessage(c.messageId ?? c.id ?? activeMessageId);
+          activeMessageId = messageId;
+          const fragment = asString(c.text);
+          if (fragment) messageBuffers.get(messageId)!.push(fragment);
+          continue;
+        }
+
+        if (chunk.type === "error") {
+          const c = chunk as UiErrorChunk;
+          const errorText = asString(c.errorText) ?? asString(c.message) ?? "stream_error";
+          if (!firstError) firstError = errorText;
         }
       }
     }
   }
 
-  return { text: collected.join("").trim(), error: firstError };
+  // Pick the last non-empty message — fast-ack streams come first, the
+  // orchestrator's real answer is always last.
+  let chosen = "";
+  for (let i = messageOrder.length - 1; i >= 0; i -= 1) {
+    const candidate = (messageBuffers.get(messageOrder[i]!) ?? []).join("").trim();
+    if (candidate) {
+      chosen = candidate;
+      break;
+    }
+  }
+
+  return { text: chosen, error: firstError };
 }
 
 function trimToSms(text: string, maxChars: number): string {
