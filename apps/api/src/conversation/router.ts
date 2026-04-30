@@ -8,8 +8,10 @@ import {
   verifyOtpForPhone,
 } from "../auth/otp.js";
 import { linqClient } from "../linq/client.js";
-import { parseWantText } from "../wants/parser.js";
+import { parseWantText, type ParsedWant } from "../wants/parser.js";
 import { createSpacebaseClient } from "../spacebase/client.js";
+import { adinClient } from "../adin/client.js";
+import { SMS_AGENT_SYSTEM_PROMPT, buildIntakeUserMessage } from "../adin/prompt.js";
 
 const spacebase = createSpacebaseClient();
 
@@ -155,8 +157,38 @@ async function handleWantIntake(input: { phone: string; userId: string; text: st
     pendingWantId: want.id,
   });
 
-  const summary = formatWantAck(parsed);
-  await reply(input.phone, input.userId, summary);
+  const replyBody = await composeIntakeReply({
+    rawText: input.text,
+    parsed,
+    userId: input.userId,
+  });
+  await reply(input.phone, input.userId, replyBody);
+}
+
+async function composeIntakeReply(input: {
+  rawText: string;
+  parsed: ParsedWant;
+  userId: string;
+}): Promise<string> {
+  if (adinClient.isConfigured()) {
+    const adinResult = await adinClient.complete({
+      systemPrompt: SMS_AGENT_SYSTEM_PROMPT,
+      userMessage: buildIntakeUserMessage({
+        rawText: input.rawText,
+        parsed: input.parsed,
+      }),
+    });
+    if (adinResult.ok && adinResult.text) {
+      logger.info("conversation.reply.source", { userId: input.userId, source: "adin" });
+      return adinResult.text;
+    }
+    logger.warn("conversation.reply.adin_fallback", {
+      userId: input.userId,
+      reason: adinResult.reason,
+    });
+  }
+
+  return formatWantAck(input.parsed);
 }
 
 function formatWantAck(parsed: {
