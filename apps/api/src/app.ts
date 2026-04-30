@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
+import { serveStatic } from "@hono/node-server/serve-static";
 import { z } from "zod";
 
 import { defaultAgentRoles } from "@bazaar/agents";
@@ -31,6 +32,8 @@ import { loadDemoMarketplaceData, saveDemoMatchRun } from "./db.js";
 import { analyzeProductImage, productFactsToWantText } from "./vision.js";
 
 const app = new Hono();
+
+app.use("/demo/*", serveStatic({ root: "./public" }));
 
 const phoneSchema = z
   .string()
@@ -359,7 +362,7 @@ async function matchAndSave(want: Want, inputMode: "text" | "image", prefixTrace
   const data = await loadDemoMarketplaceData();
   const shopping = runMarketplaceMatch({ want, data });
   const trace = [...prefixTrace, ...shopping.trace];
-  const result = { ...shopping, trace };
+  const result = withAbsoluteImageUrls({ ...shopping, trace });
 
   await saveDemoMatchRun({
     id: `${inputMode}-${want.id}`,
@@ -373,6 +376,23 @@ async function matchAndSave(want: Want, inputMode: "text" | "image", prefixTrace
   });
 
   return result;
+}
+
+function withAbsoluteImageUrls<T extends ReturnType<typeof runMarketplaceMatch>>(shopping: T): T {
+  const absolutize = (value: string | undefined) =>
+    value?.startsWith("/") ? new URL(value, config.PUBLIC_APP_URL).toString() : value;
+
+  for (const candidate of shopping.candidates) {
+    candidate.imageUrl = absolutize(candidate.imageUrl);
+  }
+  for (const candidate of shopping.rankedCandidates) {
+    candidate.imageUrl = absolutize(candidate.imageUrl);
+  }
+  for (const match of shopping.matches) {
+    match.candidate.imageUrl = absolutize(match.candidate.imageUrl);
+    match.listing.imageUrl = absolutize(match.listing.imageUrl);
+  }
+  return shopping;
 }
 
 function createWantFromText(input: {
