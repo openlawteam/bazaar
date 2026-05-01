@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { ArrowRight, ShoppingBag, Store } from "lucide-react";
 
-import { chooseIntent } from "@/app/actions";
 import { BazaarLogo } from "@/components/bazaar-logo";
 import { Button } from "@/components/ui/button";
 
@@ -80,12 +79,12 @@ function IntentChoice({
           <p className="mt-1 text-sm font-semibold text-black/70">{description}</p>
         </div>
       </div>
-      <form action={chooseIntent.bind(null, action)}>
-        <Button className="w-full" size="lg" type="submit">
+      <Button asChild className="w-full" size="lg">
+        <a href={`/intent/${action}`}>
           {buttonLabel}
           <ArrowRight className="size-4" />
-        </Button>
-      </form>
+        </a>
+      </Button>
     </div>
   );
 }

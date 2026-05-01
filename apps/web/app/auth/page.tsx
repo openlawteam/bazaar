@@ -1,7 +1,15 @@
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
 import { AuthForm } from "@/app/auth/auth-form";
 import { BazaarLogo } from "@/components/bazaar-logo";
 
-export default function AuthPage() {
+export default async function AuthPage() {
+  const cookieStore = await cookies();
+  if (cookieStore.get("bazaar_session")?.value) {
+    redirect("/dashboard");
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center px-5 py-12">
       <section className="relative w-full max-w-4xl rounded-[2.25rem] border-2 border-black bg-white p-4 shadow-[12px_12px_0_#111]">
