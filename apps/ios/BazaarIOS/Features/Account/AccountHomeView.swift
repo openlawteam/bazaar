@@ -1,53 +1,56 @@
 import SwiftUI
 
 struct AccountHomeView: View {
-    @StateObject private var viewModel = AccountViewModel()
+    @State private var phoneNumber = ""
+    @State private var verificationCode = ""
+    @State private var isLoading = false
+    @State private var state: AccountAuthState = .enterPhone
 
     var body: some View {
         NavigationStack {
             Form {
                 Section("Phone Number") {
-                    TextField("+1 555 555 5555", text: $viewModel.phoneNumber)
+                    TextField("+1 555 555 5555", text: $phoneNumber)
                         .textContentType(.telephoneNumber)
                         .keyboardType(.phonePad)
                 }
 
-                if case .codeSent = viewModel.state {
+                if case .codeSent = state {
                     Section("Verification Code") {
-                        TextField("6-digit code", text: $viewModel.verificationCode)
+                        TextField("6-digit code", text: $verificationCode)
                             .keyboardType(.numberPad)
                     }
                 }
 
                 Section {
-                    switch viewModel.state {
+                    switch state {
                     case .enterPhone, .error:
-                        Button(viewModel.isLoading ? "Sending..." : "Send Code") {
-                            Task { await viewModel.sendOTP() }
+                        Button(isLoading ? "Sending..." : "Send Code") {
+                            Task { await sendOTP() }
                         }
-                        .disabled(viewModel.isLoading)
+                        .disabled(isLoading)
                     case .codeSent:
-                        Button(viewModel.isLoading ? "Verifying..." : "Verify") {
-                            Task { await viewModel.verifyOTP() }
+                        Button(isLoading ? "Verifying..." : "Verify") {
+                            Task { await verifyOTP() }
                         }
-                        .disabled(viewModel.isLoading)
+                        .disabled(isLoading)
                     case .verified:
                         Label("Signed in", systemImage: "checkmark.circle.fill")
                             .foregroundStyle(.green)
                     }
                 }
 
-                if case let .error(message) = viewModel.state {
+                if case let .error(message) = state {
                     Section {
                         Text(message)
                             .foregroundStyle(.red)
                     }
                 }
 
-                if case .codeSent = viewModel.state {
+                if case .codeSent = state {
                     Section {
                         Button("Start Over", role: .destructive) {
-                            viewModel.reset()
+                            reset()
                         }
                     }
                 }
@@ -60,5 +63,35 @@ struct AccountHomeView: View {
             }
             .navigationTitle("Account")
         }
+    }
+
+    private func sendOTP() async {
+        let digits = phoneNumber.filter(\.isNumber)
+        guard digits.count >= 10 else {
+            state = .error("Please enter a valid phone number.")
+            return
+        }
+
+        isLoading = true
+        defer { isLoading = false }
+        try? await Task.sleep(nanoseconds: 700_000_000)
+        state = .codeSent
+    }
+
+    private func verifyOTP() async {
+        guard verificationCode.count == 6 else {
+            state = .error("Code must be 6 digits.")
+            return
+        }
+
+        isLoading = true
+        defer { isLoading = false }
+        try? await Task.sleep(nanoseconds: 700_000_000)
+        state = verificationCode == "123456" ? .verified : .error("Invalid code. Use 123456 for this demo.")
+    }
+
+    private func reset() {
+        verificationCode = ""
+        state = .enterPhone
     }
 }
