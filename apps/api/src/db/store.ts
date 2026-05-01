@@ -1,7 +1,19 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 
 import { config } from "../config.js";
+
+/**
+ * On Vercel serverless functions the working directory (`/var/task`) is read-only,
+ * so a relative `DATA_DIR` like `.data` will EROFS on first write. When we detect
+ * a Vercel runtime, anchor relative paths under `/tmp` (the only writable surface
+ * inside a Lambda-style sandbox) instead of the cwd. This keeps local dev pointed
+ * at the repo `.data/` directory while letting prod functions persist within a
+ * single warm container. Cross-invocation persistence still requires Postgres or
+ * another shared store.
+ */
+const ON_VERCEL = process.env.VERCEL === "1" || process.env.VERCEL === "true";
+const VERCEL_WRITABLE_ROOT = "/tmp/bazaar-store";
 
 export interface DbState {
   users: UserRow[];
@@ -155,7 +167,10 @@ const initialState: DbState = {
 };
 
 function dataPath(): string {
-  return resolve(process.cwd(), config.DATA_DIR, "store.json");
+  const dir = config.DATA_DIR;
+  if (isAbsolute(dir)) return resolve(dir, "store.json");
+  const root = ON_VERCEL ? VERCEL_WRITABLE_ROOT : process.cwd();
+  return resolve(root, dir, "store.json");
 }
 
 function ensureDir(filePath: string): void {
