@@ -12,6 +12,8 @@
     "build": "npm run build --workspaces --if-present",
     "typecheck": "tsc -b packages/core packages/spacebase packages/shopping packages/agents apps/api --pretty false",
     "dev:api": "npm run dev --workspace @bazaar/api",
+    "dev:web": "npm run dev --workspace @bazaar/web",
+    "build:web": "npm run build --workspace @bazaar/api && npm run build --workspace @bazaar/web",
     "db:seed": "npm run db:seed --workspace @bazaar/api",
     "test": "npm run test --workspaces --if-present"
   },

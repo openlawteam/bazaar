@@ -1,0 +1,93 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --radius: 1.4rem;
+  --background: #ffe66b;
+  --foreground: #111111;
+  --card: #ffffff;
+  --card-foreground: #111111;
+  --popover: #ffffff;
+  --popover-foreground: #111111;
+  --primary: #e30613;
+  --primary-foreground: #ffffff;
+  --secondary: #ffd500;
+  --secondary-foreground: #111111;
+  --muted: #fff3a3;
+  --muted-foreground: #4d3b00;
+  --accent: #0b5bd3;
+  --accent-foreground: #ffffff;
+  --destructive: #e30613;
+  --border: #111111;
+  --input: #111111;
+  --ring: #0b5bd3;
+}
+
+.dark {
+  --background: #ffe66b;
+  --foreground: #111111;
+  --card: #ffffff;
+  --card-foreground: #111111;
+  --popover: #ffffff;
+  --popover-foreground: #111111;
+  --primary: #e30613;
+  --primary-foreground: #ffffff;
+  --secondary: #ffd500;
+  --secondary-foreground: #111111;
+  --muted: #fff3a3;
+  --muted-foreground: #4d3b00;
+  --accent: #0b5bd3;
+  --accent-foreground: #ffffff;
+  --destructive: #e30613;
+  --border: #111111;
+  --input: #111111;
+  --ring: #0b5bd3;
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
+}
+
+* {
+  border-color: var(--border);
+  outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
+}
+
+body {
+  background:
+    radial-gradient(circle at 12% 18%, rgb(255 255 255 / 0.42) 0 36px, transparent 37px),
+    radial-gradient(circle at 88% 12%, rgb(11 91 211 / 0.28) 0 52px, transparent 53px),
+    radial-gradient(circle at 78% 82%, rgb(227 6 19 / 0.28) 0 64px, transparent 65px),
+    linear-gradient(135deg, #ffe66b 0%, #ffd500 42%, #ffef8a 100%);
+  color: var(--foreground);
+}
+
+::selection {
+  background: #0b5bd3;
+  color: #ffffff;
+}

@@ -4,7 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./app": "./src/app.ts"
+    "./app": {
+      "types": "./dist/app.d.ts",
+      "default": "./dist/app.js"
+    }
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
