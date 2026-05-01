@@ -3,7 +3,12 @@
  *
  * Runs BEFORE the buyer-want fallback in `processInbound()` so verified users can:
  *   - list something for sale
- *   - browse trending / new / local marketplace inventory
+ *   - browse marketplace inventory in any of three scopes:
+ *     - "trending" — generic "what's for sale / what's available / show me
+ *       listings / browse / what do you have / any deals" (default scope when
+ *       no temporal or location qualifier is present)
+ *     - "new" — "what's new / just listed / new listings / recently listed"
+ *     - "local" — "near me / nearby / in my area / local"
  *   - get help
  *
  * Anything that doesn't match an explicit intent below is treated as a buyer want
@@ -27,6 +32,30 @@ const SELL_REGEX =
 const TRENDING_REGEX = /\b(trending|hot|popular|most\s+viewed|top\s+items?)\b/i;
 const NEW_REGEX = /\b(what(?:'|\s)?s\s+new|whats\s+new|new\s+listings?|just\s+listed|recent(?:ly\s+listed)?)\b/i;
 const LOCAL_REGEX = /\b(near\s*me|nearby|local(?:\s+to\s+me)?|in\s+my\s+area|around\s+me|in\s+my\s+city)\b/i;
+
+/**
+ * Catch-all "show me marketplace inventory" phrasings that don't carry an
+ * explicit temporal or location qualifier. These default to the "trending"
+ * scope so we always have something to surface, but if the message ALSO
+ * says "near me" or "what's new" the more specific scope still wins below.
+ *
+ * Carefully written to NOT collide with SELL_REGEX: "selling X" / "for sale: X"
+ * are handled earlier in classifyIntent, and "what's for sale" / "browse"
+ * never start with the SELL prefixes.
+ */
+const MARKETPLACE_BROWSE_REGEX = new RegExp(
+  [
+    "\\bwhat(?:'?s|\\s+is)\\s+for\\s+sale\\b",
+    "\\bwhat(?:'?s|\\s+is)\\s+available\\b",
+    "\\bshow\\s+(?:me\\s+)?(?:the\\s+)?(?:listings?|what\\s+you\\s+(?:have|got))\\b",
+    "\\bwhat\\s+do\\s+you\\s+have\\b",
+    "\\bwhat\\s+have\\s+you\\s+got\\b",
+    "\\b(?:any|what)\\s+deals\\b",
+    "^\\s*browse(?:\\s+(?:listings?|inventory|items?|stuff|store|marketplace))?\\s*[!.?]*\\s*$",
+  ].join("|"),
+  "i",
+);
+
 const LOCATION_REGEX = /(?:near|in|around)\s+([A-Za-z][A-Za-z\s.'-]{2,60})/i;
 
 /**
@@ -36,8 +65,8 @@ const LOCATION_REGEX = /(?:near|in|around)\s+([A-Za-z][A-Za-z\s.'-]{2,60})/i;
  * (e.g. "selling popular item") and discover wins over the default want
  * fallback. Bare locations like "in Brooklyn" do NOT trigger discover on
  * their own — the user has to also say a discover keyword (trending / local
- * / what's new) so we don't accidentally hijack buyer searches like
- * "vintage couch in Brooklyn".
+ * / what's new / browse-style phrasing) so we don't accidentally hijack
+ * buyer searches like "vintage couch in Brooklyn".
  */
 export function classifyIntent(text: string): SmsIntent {
   const trimmed = text.trim();
@@ -54,8 +83,9 @@ export function classifyIntent(text: string): SmsIntent {
   const isTrending = TRENDING_REGEX.test(trimmed);
   const isNew = NEW_REGEX.test(trimmed);
   const isLocal = LOCAL_REGEX.test(trimmed);
+  const isMarketplaceBrowse = MARKETPLACE_BROWSE_REGEX.test(trimmed);
 
-  if (isTrending || isNew || isLocal) {
+  if (isTrending || isNew || isLocal || isMarketplaceBrowse) {
     const scope: DiscoverScope = isLocal ? "local" : isNew ? "new" : "trending";
     const locationMatch = trimmed.match(LOCATION_REGEX);
     return {
