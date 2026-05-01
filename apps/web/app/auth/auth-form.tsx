@@ -14,6 +14,7 @@ type OtpStartResponse = {
   ok: boolean;
   expiresAt?: string;
   devCode?: string;
+  smsStatus?: "sent" | "demo" | "failed";
   error?: string;
 };
 
@@ -23,12 +24,28 @@ type OtpVerifyResponse = {
   reason?: string;
 };
 
+function formatVerifyError(payload: OtpVerifyResponse): string {
+  switch (payload.reason) {
+    case "bad_code":
+      return "That code didn't match. Double-check and try again.";
+    case "expired":
+      return "That code expired. Tap Back and request a new one.";
+    case "too_many_attempts":
+      return "Too many tries. Tap Back and request a new code.";
+    case "no_code":
+      return "We don't have a pending code for that number. Tap Back and request one.";
+    default:
+      return payload.error ?? "That code did not work. Try again.";
+  }
+}
+
 export function AuthForm() {
   const router = useRouter();
   const [phoneNumber, setPhoneNumber] = useState("");
   const [code, setCode] = useState("");
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [devCode, setDevCode] = useState<string | null>(null);
+  const [smsStatus, setSmsStatus] = useState<OtpStartResponse["smsStatus"]>();
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -46,6 +63,7 @@ export function AuthForm() {
         return;
       }
       setDevCode(payload.devCode ?? null);
+      setSmsStatus(payload.smsStatus);
       setStep("otp");
     });
   }
@@ -60,7 +78,7 @@ export function AuthForm() {
       });
       const payload = (await response.json()) as OtpVerifyResponse;
       if (!response.ok || !payload.ok) {
-        setError(payload.reason ?? payload.error ?? "That code did not work. Try again.");
+        setError(formatVerifyError(payload));
         return;
       }
       router.push("/dashboard");
@@ -111,7 +129,16 @@ export function AuthForm() {
             </div>
             {devCode ? (
               <p className="rounded-2xl border-2 border-black bg-[#fff3a3] px-4 py-3 text-sm font-semibold text-black">
-                Dev code: <span className="font-mono text-foreground">{devCode}</span>
+                {smsStatus === "demo"
+                  ? "Demo mode — no real SMS was sent. Use this code:"
+                  : "Dev code:"}{" "}
+                <button
+                  type="button"
+                  className="font-mono text-foreground underline underline-offset-2 hover:opacity-70"
+                  onClick={() => setCode(devCode)}
+                >
+                  {devCode}
+                </button>
               </p>
             ) : null}
           </div>

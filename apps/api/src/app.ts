@@ -109,15 +109,20 @@ const otpVerifySchema = z.object({ phoneNumber: phoneSchema, code: z.string().mi
 app.post("/auth/otp/start", async (context) => {
   const body = otpStartSchema.parse(await context.req.json());
   const issued = issueOtpForPhone(body.phoneNumber);
-  await linqClient.send({
+  const send = await linqClient.send({
     toPhoneNumber: body.phoneNumber,
     userId: issued.userId,
     body: `Bazaar verification code: ${issued.code}. Expires soon.`,
   });
+  // When we don't actually deliver via Linq (DEMO_MODE or missing creds), the
+  // user has no way to learn the code. Surface it so the demo flow keeps working
+  // even on production builds (Vercel sets NODE_ENV=production).
+  const expose = send.status !== "sent";
   return context.json({
     ok: true,
     expiresAt: issued.expiresAt,
-    devCode: config.NODE_ENV === "production" ? undefined : issued.code,
+    smsStatus: send.status,
+    devCode: expose ? issued.code : undefined,
   });
 });
 
