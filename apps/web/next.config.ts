@@ -1,10 +1,12 @@
+import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { NextConfig } from "next";
 
-const workspaceRoot = fileURLToPath(new URL("../..", import.meta.url));
+const workspaceRoot = dirname(fileURLToPath(new URL("../../package.json", import.meta.url)));
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: workspaceRoot,
   turbopack: {
     root: workspaceRoot,
   },
