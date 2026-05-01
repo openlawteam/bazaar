@@ -51,7 +51,7 @@ const MARKETPLACE_BROWSE_REGEX = new RegExp(
     "\\bwhat\\s+do\\s+you\\s+have\\b",
     "\\bwhat\\s+have\\s+you\\s+got\\b",
     "\\b(?:any|what)\\s+deals\\b",
-    "^\\s*browse(?:\\s+(?:listings?|inventory|items?|stuff|store|marketplace))?\\s*[!.?]*\\s*$",
+    "^\\s*browse\\b",
   ].join("|"),
   "i",
 );
