@@ -40,7 +40,7 @@ EVENT = "spacebase1-hackathon-2026"
 TEAM_NAME = "Bazaar"
 REPO_URL = "https://github.com/openlawteam/bazaar"
 ONE_LINER = (
-    "Demand-first personal shopping over SMS where every buyer want is an "
+    "Demand-first personal shopping on the web where every buyer want is an "
     "intent and specialist agents self-select to find, score, and coordinate "
     "local or shippable options."
 )

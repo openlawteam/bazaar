@@ -1,35 +1,33 @@
 # Bazaar
 
-Demand-first personal shopping over SMS and iOS.
-
-Bazaar lets a person text what they want, turns that want into an intent, and lets specialized agents find, score, and coordinate local or shippable options. The iOS app is the account and preference control center; SMS/iMessage is the fast buying loop.
+Bazaar is a Next.js web app for demand-first personal shopping. A user verifies a phone number in demo mode, posts a want, and sees seeded marketplace matches plus seller outreach drafts.
 
 ## Repo Shape
 
 ```text
-apps/
-  api/        Lightweight TypeScript API for SMS webhooks and orchestration.
-  ios/        SwiftUI app workspace owned by Suvina.
-packages/
-  core/       Shared domain schemas and TypeScript types.
-  agents/     Agent role contracts and orchestration interfaces.
-  shopping/   Shopping/search adapter contracts owned by Jamie.
-  spacebase/  Intent-space client contracts.
-docs/
-  plan.md
-  ownership.md
-  architecture.md
-  api-contracts.md
-  greg-build.md
-  bazaar-ios-scout.md
+app/                  Next.js App Router pages and API route handlers.
+components/           Shared UI components.
+lib/                  Server logic, demo store, domain contracts, agents, shopping, and Spacebase helpers.
+docs/                 Product and API notes.
+public/demo/          Demo listing images.
+scripts/              Local utility scripts.
 ```
 
 ## Quick Start
 
 ```bash
 npm install
-npm run typecheck
-npm run dev:api
+npm run dev
 ```
 
-The API currently exposes infrastructure stubs and shared contracts only. Product logic, SMS handling, shopping adapters, and iOS UX are intentionally split by owner.
+Open `http://localhost:3000`, choose a buy/sell path, enter a phone number, and use the surfaced demo OTP code to continue to the dashboard.
+
+## Useful Commands
+
+```bash
+npm run typecheck
+npm run build
+npm run start
+```
+
+Local state is file-backed under `.data/`. On Vercel this is only durable within a warm function container; swap the repos to Postgres before relying on persistent production state.

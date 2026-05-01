@@ -2,36 +2,32 @@
 
 ## Product
 
-Bazaar is a demand-first personal shopping agent. A user says what they want, usually by SMS or iMessage. Bazaar interviews them when needed, learns their buying preferences, and coordinates specialized agents to find, score, and help act on local or shippable options.
+Bazaar is a demand-first personal shopping agent. A user says what they want, Bazaar turns that want into structured intent, and specialist agents find, score, and coordinate local or shippable options.
 
-The user experience is intentionally split:
+The current product surface is a Next.js web app:
 
-- **SMS/iMessage** is the low-friction buying loop: wants, clarifying questions, quick approvals, seller updates.
-- **iOS** is the account and control center: phone auth, buyer profile, active wants, saved preferences, approvals, history, and widgets later.
-- **Spacebase1** is the coordination substrate: each buyer want is an `INTENT`, and candidate listings, promises, risk checks, and completions live inside that intent's interior.
-- **ADIN-style orchestration** supplies the agent pattern: one orchestrator delegates to specialist roles rather than a single monolithic chatbot.
+- **Web dashboard** handles demo phone verification, buying wants, seller listings, and match review.
+- **Spacebase1** remains the coordination substrate: each buyer want can be represented as an `INTENT`, and candidate listings, promises, risk checks, and completions can live inside that intent's interior.
+- **Agent orchestration** supplies the buying pattern: one request fans out to specialist roles for scouting, fit checks, risk checks, negotiation drafts, and logistics.
 
 ## MVP Demo
 
-1. A first-time user verifies a phone number.
-2. Bazaar interviews the user over SMS or iOS to learn basic shopping preferences.
-3. The user texts a want, for example: "Find me a used Herman Miller chair under $500 near Brooklyn."
-4. The API parses the message into a structured want and posts it as a Spacebase intent.
-5. Shopping agents find local and shippable candidates.
-6. Fit and risk agents score candidates against the buyer profile.
-7. The user receives a concise SMS summary and can approve next steps.
-8. The iOS app shows the buyer profile, active wants, and status.
+1. A first-time user verifies a phone number through demo OTP.
+2. The user chooses buying or selling.
+3. A buyer posts a want, for example: `Find me a used Herman Miller chair under $500 near Brooklyn`.
+4. Bazaar parses the want, persists it, and runs a seeded marketplace match.
+5. Shopping agents score candidate listings against buyer preferences and risk signals.
+6. The dashboard shows wants, listings, suggested matches, and seller outreach drafts.
 
 ## Hackathon Fit
 
 - **Originality**: reverse Craigslist/eBay where demand comes first and agents work for the buyer.
-- **Technical depth**: SMS auth, profile extraction, structured wants, Spacebase posting, agent delegation, candidate ranking, iOS account surface.
-- **Intent-space native-ness**: wants are intents; every want has an interior where agents self-select and post child work.
-- **Demo-ability**: a judge can text a want, watch the intent space fill, and receive options by SMS.
+- **Technical depth**: structured wants, phone-based session flow, marketplace matching, Spacebase-ready intent contracts, agent traces, and image-based want intake.
+- **Intent-space native-ness**: wants are intents; every want has an interior where agents can self-select and post child work.
+- **Demo-ability**: a judge can use the web app, post a want, see matches, and inspect the agent trace.
 
 ## Non-Goals For Initial Repo
 
-- Do not build the full iOS UI yet.
 - Do not implement production payments.
 - Do not automate purchases without explicit user approval.
 - Do not depend on broad marketplace scraping before the demo path works.

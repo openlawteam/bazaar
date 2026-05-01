@@ -1,0 +1,64 @@
+import { z } from "zod";
+
+const envSchema = z.object({
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  PORT: z.coerce.number().int().positive().default(3000),
+  PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
+
+  DATA_DIR: z.string().default(".data"),
+  SESSION_SECRET: z.string().min(16).default("dev-only-session-secret-change-me"),
+  OTP_CODE_TTL_SECONDS: z.coerce.number().int().positive().default(600),
+  OTP_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
+  DEMO_MODE: z
+    .union([z.boolean(), z.string()])
+    .optional()
+    .transform((value) => value === true || value === "true"),
+
+  ADIN_API_BASE_URL: z.string().url().default("https://adin.chat/api/v1"),
+  ADIN_API_KEY: z.string().optional(),
+  OPENAI_API_KEY: z.string().optional(),
+  VERCEL_AI_GATEWAY_API_KEY: z.string().optional(),
+  AI_GATEWAY_API_KEY: z.string().optional(),
+  GATEWAY_ASSISTANT_MODEL: z.string().default("openai/gpt-5.1-instant"),
+
+  SPACEBASE_COMMONS_URL: z.string().url().default("https://spacebase1.differ.ac/commons"),
+  SPACEBASE_AGENT_PRINCIPAL: z.string().optional(),
+  SPACEBASE_AGENT_LABEL: z.string().default("Bazaar"),
+  SPACEBASE_HOME_SPACE_ID: z.string().optional(),
+  SPACEBASE_HACKATHON_SUBMISSION_PARENT_ID: z
+    .string()
+    .default("intent-413e0bc5-d8f3-40e7-afb4-350e220df03c"),
+});
+
+const parsed = envSchema.parse(process.env);
+
+export const config = parsed;
+export type AppConfig = typeof parsed;
+
+export function resolveGatewayApiKey(): string | undefined {
+  return config.AI_GATEWAY_API_KEY ?? config.VERCEL_AI_GATEWAY_API_KEY;
+}
+
+export interface ReadinessReport {
+  config: { nodeEnv: string; port: number };
+  adin: { configured: boolean };
+  gateway: { configured: boolean; model: string };
+  spacebase: { configured: boolean; homeSpaceId: string | null };
+  demoMode: boolean;
+}
+
+export function describeReadiness(): ReadinessReport {
+  return {
+    config: { nodeEnv: config.NODE_ENV, port: config.PORT },
+    adin: { configured: Boolean(config.ADIN_API_KEY) },
+    gateway: {
+      configured: Boolean(resolveGatewayApiKey()),
+      model: config.GATEWAY_ASSISTANT_MODEL,
+    },
+    spacebase: {
+      configured: Boolean(config.SPACEBASE_AGENT_PRINCIPAL),
+      homeSpaceId: config.SPACEBASE_HOME_SPACE_ID ?? null,
+    },
+    demoMode: Boolean(config.DEMO_MODE),
+  };
+}

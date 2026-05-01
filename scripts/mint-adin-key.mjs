@@ -38,7 +38,7 @@ try {
 }
 
 const userId = process.argv[2];
-const keyName = process.argv[3] ?? "Bazaar SMS Agent";
+const keyName = process.argv[3] ?? "Bazaar Buying Agent";
 if (!userId) {
   console.error("usage: node scripts/mint-adin-key.mjs <userId> [<keyName>]");
   process.exit(1);
