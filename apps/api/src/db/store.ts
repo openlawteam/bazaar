@@ -184,17 +184,12 @@ function persist(state: DbState): void {
   writeFileSync(filePath, JSON.stringify(state, null, 2));
 }
 
-let cachedState: DbState | null = null;
-
 export function getState(): DbState {
-  if (!cachedState) {
-    cachedState = load();
-  }
-  return cachedState;
+  return load();
 }
 
 export function update(mutator: (state: DbState) => void): void {
-  const state = getState();
+  const state = load();
   mutator(state);
   persist(state);
 }

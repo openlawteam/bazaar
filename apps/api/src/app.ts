@@ -236,7 +236,33 @@ app.post("/wants", async (context) => {
 
   const body = wantIngestSchema.parse(rawBody);
   const sessionUser = getSessionUser(context.req.header("authorization"));
-  const phone = body.phoneNumber ?? sessionUser?.phoneNumber;
+  if (sessionUser) {
+    const want = createWantFromText({
+      userId: sessionUser.id,
+      rawText: body.text,
+    });
+    wantsRepo.create({
+      id: want.id,
+      userId: want.userId,
+      rawText: want.rawText,
+      title: want.title,
+      description: want.description ?? null,
+      status: want.status,
+      maxBudgetCents: want.maxBudgetCents ?? null,
+      currency: want.currency,
+      locationLabel: want.locationLabel ?? null,
+      spacebaseIntentId: want.spacebaseIntentId ?? null,
+    });
+    const shopping = await matchAndSave(want, "text");
+    return context.json({
+      accepted: true,
+      next: shopping.nextAction,
+      want,
+      shopping,
+    });
+  }
+
+  const phone = body.phoneNumber;
   if (!phone) return context.json({ error: "phone_required" }, 400);
 
   await processInbound({ fromPhoneNumber: phone, text: body.text });
